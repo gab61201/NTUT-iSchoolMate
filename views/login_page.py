@@ -5,11 +5,14 @@ async def login_page():
 
     async def handle_login():
         """處理登入邏輯"""
+        login_button.set_visibility(False)
+        skeleton.set_visibility(visible=True)
+
         scraper = getattr(app, "scraper")
         user = getattr(app, "user")
 
         if not await scraper.login(student_id.value, password.value):
-            ui.notify('錯誤的帳號或密碼', color='negative')
+            ui.notify('錯誤的帳號或密碼，錯誤達五次後鎖定帳號15分鐘', color='negative')
         elif not await scraper.oauth("aa_0010-oauth"):
              ui.notify("登入課程系統失敗", color='negative')
         elif not await user.fetch_year_seme_list():
@@ -17,8 +20,11 @@ async def login_page():
         else:
             for seme in user.seme_list:
                 await user.fetch_seme_course_and_timetable(seme)
-
             ui.navigate.to('/home')
+            return
+        
+        login_button.set_visibility(True)
+        skeleton.set_visibility(visible=False)
             
 
     def handle_auto_login(isEnabled):
@@ -36,7 +42,10 @@ async def login_page():
             password = ui.input(label='密碼', password=True, password_toggle_button=True) \
                 .props('outlined').classes('w-full')
             
-            ui.button('登 入', on_click=handle_login, color='primary').classes('w-full mt-4 h-12')
+            login_button = ui.button('登 入', on_click=handle_login, color='primary').classes('w-full mt-4 h-12')
+            skeleton = ui.skeleton().classes('w-full mt-4 h-12')
+            skeleton.set_visibility(False)
+
             ui.keyboard(on_key=lambda e: handle_login() if e.key == 'Enter' else None)
             ui.checkbox('啟動時自動登入', on_change=handle_auto_login, value=app.storage.general["auto_login"])
             # ui.separator()
