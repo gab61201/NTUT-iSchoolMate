@@ -1,8 +1,8 @@
 import asyncio
 from nicegui import app, ui
-from home_components.navigation_bar import *
-from home_components.middle_panel import *
-from home_components.right_panel import *
+from .home_components.navigation_bar import *
+from .home_components.middle_panel import *
+from .home_components.right_panel import *
 
 
 @ui.page('/home')

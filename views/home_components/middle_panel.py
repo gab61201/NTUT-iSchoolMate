@@ -1,11 +1,9 @@
 from nicegui import app, ui
 
 
-user = getattr(app, "user")
-
-
 def timetable_ui():
-    
+    user = getattr(app, "user")
+
     @ui.refreshable
     def render_timetable(seme: str):
         course_list = []
