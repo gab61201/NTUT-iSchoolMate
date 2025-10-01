@@ -3,6 +3,7 @@ import asyncio
 import json
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning
+from typing import Literal
 
 from bs4 import BeautifulSoup
 import httpx
@@ -93,7 +94,7 @@ class WebScraper:
             self.session.headers.pop("Referer", None)
 
 
-    async def oauth(self, apOu: str) -> bool:
+    async def oauth(self, apOu: Literal["aa_0010-oauth", "ischool_plus_oauth"]) -> bool:
         """
         執行 SSO (單一登入) 流程以取得特定服務的 session, apOu 是目標服務的代碼
 
