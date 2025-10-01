@@ -19,7 +19,7 @@ async def login_page():
              ui.notify("登入課程系統失敗", color='negative')
         else:
             for seme in user.seme_list:
-                await user.fetch_seme_course_and_timetable(seme)
+                await user.fetch_seme_timetable(seme)
                 
             await user.fetch_course_list()
             ui.navigate.to('/home')

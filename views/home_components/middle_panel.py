@@ -29,9 +29,15 @@ def timetable_ui():
 
 
 def course_list_ui():
-    with ui.list().classes("bg-gray-300"):
-        ui.item_section('Contacts').props('header').classes('text-bold')
-        ui.separator()
+    user = getattr(app, "user")
+    for seme, course_list in user.course_list.items():
+        ui.label(seme).classes("text-xl")
+        for course in course_list.values():
+            with ui.button(color="white").classes('w-full'):
+                with ui.row().classes("w-full justify-between items-center"):
+                    ui.label(f"{course.id}_{course.name}")
+                    ui.label("___")
+
 
 
 def course_search_ui():
