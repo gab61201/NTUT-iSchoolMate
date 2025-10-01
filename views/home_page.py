@@ -14,12 +14,12 @@ def timetable_ui():
 
         for lesson in course_list:
             if lesson == None:
-                ui.card().classes("w-full h-full bg-gray-200")
+                ui.card().classes("w-full h-full")
             elif type(lesson) == str:
-                with ui.card().classes("w-full h-full bg-orange-200 flex justify-center items-center p-1"):
+                with ui.card().classes("w-full h-full bg-orange-100 flex justify-center items-center p-1"):
                     ui.label(lesson).classes("text-center line-clamp-3")
             else: # lesson: Course
-                ui.button(lesson.name, color="orange-100").classes("w-full h-full bg-blue-100 text-center leading-tight").props('dense')
+                ui.button(lesson.name, color="yellow-100").classes("w-full h-full text-center leading-tight").props('dense')
 
     with ui.grid(columns='minmax(0, 2fr)'+' 3fr'*5 , rows='1fr'+' 2fr'*9).classes("w-full h-full gap-1 p-0"):
         with ui.button(icon='menu', color="orange-300").classes("w-full h-full text-black"):
@@ -62,9 +62,10 @@ async def home_page():
     with ui.grid(columns='1fr 5fr 8fr').classes("w-full h-[calc(100vh-32px)]"):
 
         #左側導覽列
-        with ui.column().classes('w-full h-full rounded-2xl'):
+        with ui.column().classes('w-full h-full rounded-2xl items-center'):
             # ui.space().classes("h-[20%]")
             ui.button(icon="school").classes("w-full text-2xl text-black bg-white").props("rounded flat")
+            ui.space()
 
             with ui.tabs().classes('w-full').props("vertical") as tabs:
                 ui.tab('timetable_tab', '個人課表').classes("text-lg")
@@ -76,12 +77,13 @@ async def home_page():
             # ui.button("北科入口", color="blue-2").classes('w-full h-[8%] rounded-2xl whitespace-nowrap text-black')
             # ui.button("課程系統", color="blue-2").classes('w-full h-[8%] rounded-2xl whitespace-nowrap text-black')
             ui.space()
-            ui.button("登出", on_click=on_logout, color="orange-5").classes('w-full h-[8%] rounded-2xl text-lg')
-            ui.button("退出", on_click=on_exit_app, color="red-5").classes('w-full h-[8%] rounded-2xl text-lg')
+            ui.button("登出", on_click=on_logout, color="orange-5").classes('w-[80%] h-[5%] rounded-2xl text-md')
+            ui.button("退出", on_click=on_exit_app, color="red-5").classes('w-[80%] h-[5%] rounded-2xl text-md')
         
         #左側卡片
         # with ui.card().classes("h-full rounded-2xl"):
-        with ui.tab_panels(tabs, value='timetable_tab', animated=False).classes('w-full h-[calc(100vh-32px)] rounded-2xl bg-gray-200 shadow-lg').props("vertical"):
+        with ui.tab_panels(tabs, value='timetable_tab', animated=False)\
+            .classes('w-full h-[calc(100vh-32px)] rounded-2xl bg-gray-200 shadow-lg').props("vertical"):
             with ui.tab_panel('timetable_tab').classes("flex-nowrap gap-2 p-4"):
                 timetable_ui()
             with ui.tab_panel('course_list_tab'):
