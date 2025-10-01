@@ -38,7 +38,7 @@ async def startup():
         app.storage.general["last_user_id"] = ""
         webbrowser.open(f"http://localhost:8000/login")
 
-    elif auto_login and await getattr(app, "scraper").login(last_user_id, password):
+    elif auto_login and await scraper.login(last_user_id, password):
 
         if not await scraper.oauth("aa_0010-oauth"):
              ui.notify("登入課程系統失敗", color='negative')
@@ -46,7 +46,8 @@ async def startup():
              ui.notify("登入課程系統失敗", color='negative')
         else:
             for seme in user.seme_list:
-                await user.fetch_seme_course_and_timetable(seme)
+                await user.fetch_seme_timetable(seme)
+            await user.fetch_course_list()
 
         webbrowser.open(f"http://localhost:8000/home")
 

@@ -20,6 +20,8 @@ async def login_page():
         else:
             for seme in user.seme_list:
                 await user.fetch_seme_course_and_timetable(seme)
+                
+            await user.fetch_course_list()
             ui.navigate.to('/home')
             return
         

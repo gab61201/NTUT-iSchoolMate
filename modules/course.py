@@ -3,7 +3,7 @@ class Course:
         self.seme = ""
         self.name = ""
         self.id = ""
-        self.class_ = ""
+        self.class_ = "" ###
 
         self.curriculum_url = ""
         self.syllabus_url = ""
