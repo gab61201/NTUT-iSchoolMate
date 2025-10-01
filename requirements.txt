@@ -1,0 +1,7 @@
+nicegui
+keyring
+pystray
+Pillow
+urllib3
+beautifulsoup4
+httpx
