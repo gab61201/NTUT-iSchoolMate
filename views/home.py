@@ -15,14 +15,12 @@ async def home_page():
     with ui.grid(columns='1fr 5fr 8fr').classes("w-full h-[calc(100vh-32px)]"):
 
         #導覽列
-        with ui.column().classes('w-full h-full rounded-2xl items-center'):
+        with ui.column().classes('w-full h-full rounded-2xl items-center justify-between'):
             home_button()
-            ui.space()
 
             with ui.tabs().classes('w-full').props("vertical") as tabs:
                 navigation_tabs()
 
-            ui.space()
             logout_and_exit_button()
         
         #中間卡片
