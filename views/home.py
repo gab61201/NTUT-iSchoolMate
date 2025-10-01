@@ -1,40 +1,8 @@
-from nicegui import app, ui
 import asyncio
-
-def timetable_ui():
-    
-    user = getattr(app, "user")
-
-    @ui.refreshable
-    def render_timetable(seme: str):
-        course_list = []
-        for i in user.timetable[seme]:
-            course_list += i
-        course_list.pop(0)
-
-        for lesson in course_list:
-            if lesson == None:
-                ui.card().classes("w-full h-full")
-            elif type(lesson) == str:
-                with ui.card().classes("w-full h-full bg-orange-100 flex justify-center items-center p-1"):
-                    ui.label(lesson).classes("text-center line-clamp-3")
-            else: # lesson: Course
-                ui.button(lesson.name, color="yellow-100").classes("w-full h-full text-center leading-tight").props('dense')
-
-    with ui.grid(columns='minmax(0, 2fr)'+' 3fr'*5 , rows='1fr'+' 2fr'*9).classes("w-full h-full gap-1 p-0"):
-        with ui.button(icon='menu', color="orange-300").classes("w-full h-full text-black"):
-            with ui.menu().props('auto-close'):
-                for seme in user.seme_list:
-                    ui.menu_item(text=seme, on_click=lambda s=seme: render_timetable.refresh(s))
-        render_timetable(user.seme_list[0])
-                
-    
-
-
-def course_list_ui():
-    with ui.list().classes("bg-gray-300"):
-        ui.item_section('Contacts').props('header').classes('text-bold')
-        ui.separator()
+from nicegui import app, ui
+from home_components.navigation_bar import *
+from home_components.middle_panel import *
+from home_components.right_panel import *
 
 
 def on_logout():
@@ -61,7 +29,7 @@ async def home_page():
     """定義主頁的佈局和內容"""
     with ui.grid(columns='1fr 5fr 8fr').classes("w-full h-[calc(100vh-32px)]"):
 
-        #左側導覽列
+        #導覽列
         with ui.column().classes('w-full h-full rounded-2xl items-center'):
             # ui.space().classes("h-[20%]")
             ui.button(icon="school").classes("w-full text-2xl text-black bg-white").props("rounded flat")
@@ -80,9 +48,8 @@ async def home_page():
             ui.button("登出", on_click=on_logout, color="orange-5").classes('w-[80%] h-[5%] rounded-2xl text-md')
             ui.button("退出", on_click=on_exit_app, color="red-5").classes('w-[80%] h-[5%] rounded-2xl text-md')
         
-        #左側卡片
-        # with ui.card().classes("h-full rounded-2xl"):
-        with ui.tab_panels(tabs, value='timetable_tab', animated=False)\
+        #中間卡片
+        with ui.tab_panels(tabs, value='timetable_tab')\
             .classes('w-full h-[calc(100vh-32px)] rounded-2xl bg-gray-200 shadow-lg').props("vertical"):
             with ui.tab_panel('timetable_tab').classes("flex-nowrap gap-2 p-4"):
                 timetable_ui()
