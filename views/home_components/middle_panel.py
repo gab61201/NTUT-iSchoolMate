@@ -34,3 +34,15 @@ def course_list_ui():
     with ui.list().classes("bg-gray-300"):
         ui.item_section('Contacts').props('header').classes('text-bold')
         ui.separator()
+
+
+def course_search_ui():
+    ...
+
+
+def schedule_ui():
+    ...
+
+
+def student_info_ui():
+    ...
