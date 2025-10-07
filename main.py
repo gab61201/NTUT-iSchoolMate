@@ -6,7 +6,7 @@ from modules import *
 from views import *
 
 logging.basicConfig(
-    level=logging.DEBUG
+    level=logging.ERROR
 )
 
 async def startup():

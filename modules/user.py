@@ -46,7 +46,7 @@ class UserManager:
         course.curriculum_url
         course.syllabus_url
         """
-        if self.course_list.get(seme, None):
+        if self.timetable.get(seme, None):
             return True
         
         html_text = await self.scraper.fetch_seme_timetable_html(seme)
