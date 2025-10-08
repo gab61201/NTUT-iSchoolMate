@@ -40,4 +40,4 @@ async def home_page():
                 student_info_ui()
         #右側卡片
         with ui.card().classes("h-full rounded-2xl"):
-            ui.label("第三塊 (8fr)")
+            render_right_panel("home", None)
