@@ -44,10 +44,6 @@ async def startup():
              ui.notify("登入課程系統失敗", color='negative')
         elif not await user.fetch_year_seme_list():
              ui.notify("登入課程系統失敗", color='negative')
-        else:
-            for seme in user.seme_list:
-                await user.fetch_seme_timetable(seme)
-            await user.fetch_course_list()
 
         webbrowser.open(f"http://localhost:8000/home")
 

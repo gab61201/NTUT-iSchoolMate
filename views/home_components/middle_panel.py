@@ -2,11 +2,19 @@ from nicegui import app, ui
 from modules.course import Course
 from .right_panel import render_right_panel
 
-def timetable_ui():
+async def timetable_ui():
     user = getattr(app, "user")
 
     @ui.refreshable
-    def render_timetable(seme: str):
+    async def render_timetable(seme: str):
+        # 若還沒抓過該學期的 timetable，就先去抓（避免 KeyError）
+        if seme not in user.timetable:
+            ui.label("載入中...").classes("w-full text-center")
+            success = await user.fetch_seme_timetable(seme)
+            if not success:
+                ui.notify(f"無法取得 {seme} 的課表", color="negative")
+                return
+
         course_list = []
         for i in user.timetable[seme]:
             course_list += i
@@ -27,7 +35,9 @@ def timetable_ui():
             with ui.menu().props('auto-close'):
                 for seme in user.seme_list:
                     ui.menu_item(text=seme, on_click=lambda s=seme: render_timetable.refresh(s))
-        render_timetable(user.seme_list[0])
+        # 呼叫前先檢查 user.seme_list 是否有內容
+        if user.seme_list:
+            await render_timetable(user.seme_list[0])
 
 
 def course_list_ui():

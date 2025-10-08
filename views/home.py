@@ -27,7 +27,7 @@ async def home_page():
         with ui.tab_panels(tabs, value='timetable_tab')\
             .classes('w-full h-[calc(100vh-32px)] rounded-2xl bg-gray-200 shadow-lg').props("vertical"):
             with ui.tab_panel('timetable_tab').classes("flex-nowrap gap-2 p-4"):
-                timetable_ui()
+                await timetable_ui()
             with ui.tab_panel('course_list_tab'):
                 course_list_ui()
             with ui.tab_panel('course_search_tab'):
