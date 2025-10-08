@@ -43,7 +43,7 @@ class UserManager:
         course.name
         course.id
         course.seme
-        course.curriculum_url
+        course.description_url
         course.syllabus_url
         """
         if self.timetable.get(seme, None):
@@ -74,9 +74,9 @@ class UserManager:
             course_info = re.search(r'<A href="Curr.jsp.format=-2&code=(.{7})">(.+?)</A>', class_html)
             if not course_info:
                 return False
-            curriculum_url = 'https://aps.ntut.edu.tw/course/tw/Curr.jsp?format=-2&code=' + course_info.group(1)
+            description_url = 'https://aps.ntut.edu.tw/course/tw/Curr.jsp?format=-2&code=' + course_info.group(1)
             course_name = course_info.group(2)
-            course.curriculum_url = curriculum_url
+            course.description_url = description_url
             course.name = course_name
 
             syllabus_url = re.search(r'ShowSyllabus.jsp.snum=(\d{6})&code=(\d{5})', class_html)

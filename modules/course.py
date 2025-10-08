@@ -10,7 +10,7 @@ class Course:
         self.name = ""
         self.id = ""
 
-        self.curriculum_url = ""
+        self.description_url = ""
         self.syllabus_url = ""
         self.file_url = ""
     
@@ -52,6 +52,19 @@ class Course:
         info_list.extend([email, syllabus, schedule, score, textbook, consult])
         return dict(zip(index, info_list))
 
+
+    async def get_description(self) -> dict|None:
+        response = await self.scraper.get(self.description_url)
+        if not response:
+            return None
+        
+        ch_search = re.search(r'<td colspan=4>(.+?)<tr>', response.text, re.DOTALL)
+        ch_description = ch_search.group(1).rstrip("\n")  #type:ignore
+
+        en_search = re.search(r'English Description\s+<td colspan=4>(.+?)</table>', response.text, re.DOTALL)
+        en_description = en_search.group(1).rstrip("\n")  #type:ignore
+
+        return {"ch_description": ch_description, "en_description": en_description}
 
 if __name__ == "__main__":
     ...
