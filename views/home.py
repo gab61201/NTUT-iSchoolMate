@@ -22,6 +22,7 @@ async def home_page():
                 navigation_tabs()
 
             logout_and_exit_button()
+            ui.link('GitHub', 'https://github.com/gab61201/NTUT-iSchoolMate', new_tab=True).classes("text-gray-400")
         
         #中間卡片
         with ui.tab_panels(tabs, value='timetable_tab')\
