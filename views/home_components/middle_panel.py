@@ -1,9 +1,10 @@
 from nicegui import app, ui
 from modules.course import Course
+from modules.user import UserManager
 from .right_panel import render_right_panel
 
 async def timetable_ui():
-    user = getattr(app, "user")
+    user: UserManager = getattr(app, "user")
 
     @ui.refreshable
     async def render_timetable(seme: str):
@@ -20,14 +21,14 @@ async def timetable_ui():
             course_list += i
         course_list.pop(0)
 
-        for lesson in course_list:
-            if lesson == None:
+        for course in course_list:
+            if course == None:
                 ui.card().classes("w-full h-full")
-            elif type(lesson) == str:
+            elif type(course) == str:
                 with ui.card().classes("w-full h-full bg-orange-100 flex justify-center items-center p-1"):
-                    ui.label(lesson).classes("text-center line-clamp-3")
-            elif type(lesson) == Course: # lesson: Course
-                ui.button(lesson.name, color="yellow-100", on_click=lambda l=lesson:render_right_panel.refresh("course", l))\
+                    ui.label(course).classes("text-center line-clamp-3")
+            elif type(course) == Course: # course: Course
+                ui.button(course.name, color="yellow-100", on_click=lambda c=course:render_right_panel.refresh("course", c))\
                     .classes("w-full h-full text-center leading-tight").props('dense')
 
     with ui.grid(columns='minmax(0, 2fr)'+' 3fr'*5 , rows='1fr'+' 2fr'*9).classes("w-full h-full gap-1 p-0"):
@@ -41,15 +42,19 @@ async def timetable_ui():
 
 
 def course_list_ui():
-    user = getattr(app, "user")
-    for seme, course_list in user.course_list.items():
-        ui.label(seme).classes("text-xl")
-        for course in course_list.values():
-            with ui.button(color="white").classes('w-full'):
-                with ui.row().classes("w-full justify-between items-center"):
-                    ui.label(f"{course.id}_{course.name}")
-                    ui.label("___")
+    user: UserManager = getattr(app, "user")
+    
 
+    @ui.refreshable
+    def render_course_list(seme):
+        for id, course in user.course_list[seme].items():
+            ui.button(f"{id}_{course.name}", color="white", on_click=lambda c=course:render_right_panel.refresh("course", c))\
+                .classes('w-full h-8 rounded-lg').props('align=left')
+
+    with ui.row().classes("w-full justify-between items-center"):
+        ui.select(options=user.seme_list, value=user.seme_list[0], on_change=lambda e:render_course_list.refresh(e.value))
+        # ui.label(f"學分數 : {...}").classes("text-lg").bind_text_from()
+    render_course_list(user.seme_list[0])
 
 def course_search_ui():
     ui.label("期待一下")
