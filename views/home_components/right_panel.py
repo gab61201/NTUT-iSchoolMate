@@ -9,7 +9,7 @@ def render_default():
 
 
 async def render_course(course: Course):
-    loading = ui.skeleton().classes("w-full h-full")
+    loading = ui.skeleton().classes("w-full h-full rounded-2xl")
     await course.fetch_syllabus()
     await course.fetch_description()
     loading.delete()

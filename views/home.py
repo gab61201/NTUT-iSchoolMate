@@ -12,7 +12,7 @@ async def home_page():
         return
     else:
         user = getattr(app, "user")
-        loading = ui.skeleton().classes("w-full h-full")
+        loading = ui.skeleton().classes("w-full h-full rounded-2xl")
         for seme in user.seme_list:
             await user.fetch_seme_timetable(seme)
         loading.delete()

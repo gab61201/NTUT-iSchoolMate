@@ -9,7 +9,7 @@ async def timetable_ui():
     @ui.refreshable
     async def render_timetable(seme: str):
         if seme not in user.timetable:
-            loading = ui.skeleton().classes("w-full h-full")
+            loading = ui.skeleton().classes("w-full h-full rounded-2xl")
             success = await user.fetch_seme_timetable(seme)
             loading.delete()
             if not success:
