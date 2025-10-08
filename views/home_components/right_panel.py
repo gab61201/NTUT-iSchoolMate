@@ -6,9 +6,13 @@ from modules.course import Course
 def render_default():
     ...
 
+
+
 async def render_course(course: Course):
+    loading = ui.skeleton().classes("w-full h-full")
     await course.fetch_syllabus()
     await course.fetch_description()
+    loading.delete()
 
     ui.label(f"{course.seme}　{course.name}　{course.id}").classes("text-2xl")
 
