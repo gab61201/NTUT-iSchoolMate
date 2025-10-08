@@ -9,8 +9,9 @@ async def timetable_ui():
     @ui.refreshable
     async def render_timetable(seme: str):
         if seme not in user.timetable:
-            ui.label("載入中...").classes("w-full text-center")
+            loading = ui.skeleton().classes("w-full h-full")
             success = await user.fetch_seme_timetable(seme)
+            loading.delete()
             if not success:
                 ui.notify(f"無法取得 {seme} 的課表", color="negative")
                 return
