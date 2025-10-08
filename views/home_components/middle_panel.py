@@ -39,8 +39,11 @@ def course_list_ui():
                     ui.label("___")
 
 
-
 def course_search_ui():
+    ...
+
+
+def search_empty_classroom_ui():
     ...
 
 
