@@ -64,7 +64,7 @@ class UserManager:
         all_classes:list[str] = re.findall(r"<tr>\s*<td>\d{6}.+?</tr>", html_text, re.DOTALL)
 
         for class_html in all_classes:
-            course = Course()
+            course = Course(self.scraper)
             course.seme = seme
             course_id = re.search(r"<td>(\d{6})", class_html)
             if not course_id:

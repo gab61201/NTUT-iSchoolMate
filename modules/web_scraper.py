@@ -7,6 +7,7 @@ from typing import Literal
 
 from bs4 import BeautifulSoup
 import httpx
+from httpx import Response
 from nicegui import app
 
 from .constants import *
@@ -254,6 +255,34 @@ class WebScraper:
         except Exception as e:
             logging.critical(f"抓取ischool課程列表時發生未預期的嚴重錯誤: {e}", exc_info=True)
             return None
+        
+    
+    async def get(self, url) -> Response|None:
+        try:
+            response = await self.session.get(url, timeout=10)
+            response.raise_for_status()
+            logging.info(f"成功獲取ischool課程列表頁面。")
+            return response
+        
+        except httpx.TimeoutException:
+            logging.error(f"請求超時: {ISCHOOL_COURSE_LIST_URL}")
+            return None
+
+        except httpx.HTTPStatusError as e:
+            logging.error(
+                f"HTTP 狀態碼錯誤: {e.response.status_code} {e.response.reason_phrase} "
+                f"在請求 URL: {e.request.url}"
+            )
+            return None
+
+        except httpx.RequestError as e:
+            logging.error(f"發生網路請求錯誤: {e.__class__.__name__} - {e}")
+            return None
+
+        except Exception as e:
+            logging.critical(f"抓取ischool課程列表時發生未預期的嚴重錯誤: {e}", exc_info=True)
+            return None
+
     # async def keep_login_status(self):
     #     user_id = app.storage.general.get("last_user_id")
 
