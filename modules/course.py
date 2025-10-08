@@ -1,5 +1,5 @@
 import re
-from web_scraper import WebScraper
+from .web_scraper import WebScraper
 
 
 class Course:
@@ -65,6 +65,7 @@ class Course:
         en_description = en_search.group(1).rstrip("\n")  #type:ignore
 
         return {"ch_description": ch_description, "en_description": en_description}
+
 
 if __name__ == "__main__":
     ...
