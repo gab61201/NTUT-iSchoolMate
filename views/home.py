@@ -32,6 +32,8 @@ async def home_page():
                 course_list_ui()
             with ui.tab_panel('course_search_tab'):
                 course_search_ui()
+            with ui.tab_panel('search_empty_classroom'):
+                search_empty_classroom_ui()
             with ui.tab_panel('schedule_tab'):
                 schedule_ui()
             with ui.tab_panel('student_info_tab'):
