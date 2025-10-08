@@ -45,7 +45,8 @@ async def login_page():
                 .props('outlined').classes('w-full')
             
             login_button = ui.button('登 入', on_click=handle_login, color='primary').classes('w-full mt-4 h-12')
-            skeleton = ui.skeleton().classes('w-full mt-4 h-12')
+            with ui.skeleton().classes("w-full mt-4 h-12 flex justify-center items-center") as skeleton:
+                ui.spinner(size='lg')
             skeleton.set_visibility(False)
 
             ui.keyboard(on_key=lambda e: handle_login() if e.key == 'Enter' else None)
