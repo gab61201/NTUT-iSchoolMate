@@ -71,6 +71,11 @@ class UserManager:
                 return False
             course.id = course_id.group(1)
             
+            credits = re.search(r"<td align=CENTER>(\d.\d)", class_html)
+            if not credits:
+                return False
+            course.credits = credits.group(1)
+
             course_info = re.search(r'<A href="Curr.jsp.format=-2&code=(.{7})">(.+?)</A>', class_html)
             if not course_info:
                 return False

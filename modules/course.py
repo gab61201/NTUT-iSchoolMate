@@ -9,6 +9,7 @@ class Course:
         self.seme = ""
         self.name = ""
         self.id = ""
+        self.credits = ""
         self.data = {}
 
         self.description_url = ""

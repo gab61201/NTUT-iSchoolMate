@@ -8,7 +8,6 @@ async def timetable_ui():
 
     @ui.refreshable
     async def render_timetable(seme: str):
-        # 若還沒抓過該學期的 timetable，就先去抓（避免 KeyError）
         if seme not in user.timetable:
             ui.label("載入中...").classes("w-full text-center")
             success = await user.fetch_seme_timetable(seme)
@@ -36,7 +35,7 @@ async def timetable_ui():
             with ui.menu().props('auto-close'):
                 for seme in user.seme_list:
                     ui.menu_item(text=seme, on_click=lambda s=seme: render_timetable.refresh(s))
-        # 呼叫前先檢查 user.seme_list 是否有內容
+        
         if user.seme_list:
             await render_timetable(user.seme_list[0])
 
@@ -44,17 +43,28 @@ async def timetable_ui():
 def course_list_ui():
     user: UserManager = getattr(app, "user")
     
+    @ui.refreshable
+    def total_credits(seme):
+        credits = 0
+        for course in user.course_list[seme].values():
+            credits += float(course.credits)
+        ui.label(f"學分數 : {credits:.1f}")
 
     @ui.refreshable
     def render_course_list(seme):
         for id, course in user.course_list[seme].items():
-            ui.button(f"{id}_{course.name}", color="white", on_click=lambda c=course:render_right_panel.refresh("course", c))\
+            ui.button(f"{id}　{course.name}", color="white", on_click=lambda c=course:render_right_panel.refresh("course", c))\
                 .classes('w-full h-8 rounded-lg').props('align=left')
 
+    def on_selection_change(seme):
+        total_credits.refresh(seme)
+        render_course_list.refresh(seme)
+
     with ui.row().classes("w-full justify-between items-center"):
-        ui.select(options=user.seme_list, value=user.seme_list[0], on_change=lambda e:render_course_list.refresh(e.value))
-        # ui.label(f"學分數 : {...}").classes("text-lg").bind_text_from()
+        ui.select(options=user.seme_list, value=user.seme_list[0], on_change=lambda e:on_selection_change(e.value))
+        total_credits(user.seme_list[0])
     render_course_list(user.seme_list[0])
+
 
 def course_search_ui():
     ui.label("期待一下")
