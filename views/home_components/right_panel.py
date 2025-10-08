@@ -7,9 +7,9 @@ def render_default():
     ...
 
 
-
 async def render_course(course: Course):
-    loading = ui.skeleton().classes("w-full h-full rounded-2xl")
+    with ui.skeleton().classes("w-full h-full rounded-2xl flex justify-center items-center") as loading:
+        ui.spinner(size='lg')
     await course.fetch_syllabus()
     await course.fetch_description()
     loading.delete()
@@ -33,11 +33,21 @@ async def render_course(course: Course):
         ui.label("")
     
 
+def render_description():
+    ...
+
+
+def render_ischool():
+    ...
 
 
 @ui.refreshable
-async def render_right_panel(render_type: Literal["default", "course"], arg: Any):
+async def render_right_panel(render_type: Literal["default", "course", "description", "ischool"], arg: Any):
     if render_type == "default":
         render_default()
     elif render_type == "course":
         await render_course(arg)
+    elif render_type == "description":
+        ...
+    elif render_type == "ischool":
+        ...
