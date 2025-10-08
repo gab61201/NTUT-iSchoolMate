@@ -42,16 +42,16 @@ def course_list_ui():
 
 
 def course_search_ui():
-    ...
+    ui.label("期待一下")
 
 
 def search_empty_classroom_ui():
-    ...
+    ui.label("期待一下")
 
 
 def schedule_ui():
-    ...
+    ui.label("期待一下")
 
 
 def student_info_ui():
-    ...
+    ui.label("期待一下")

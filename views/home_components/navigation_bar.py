@@ -10,7 +10,7 @@ def navigation_tabs():
     ui.tab('course_list_tab', '課程清單').classes("text-lg")
     ui.tab('course_search_tab', '課程查詢').classes("text-lg")
     # ui.tab('course_file_tab', '課程檔案').classes("text-lg")
-    ui.tab('search_empty_classroom_ui', '尋找空教室').classes("text-lg")
+    ui.tab('search_empty_classroom_ui', '找空教室').classes("text-lg")
     ui.tab('schedule_tab', '行事曆').classes("text-lg")
     ui.tab('student_info_tab', '個人資訊').classes("text-lg")
 

@@ -5,7 +5,7 @@ from .home_components.middle_panel import *
 from .home_components.right_panel import *
 
 
-@ui.page('/home')
+@ui.page('/home', title='NTUT iSchoolMate')
 async def home_page():
     if not app.storage.general.get("login_status") :
         ui.navigate.to('/login')
@@ -40,4 +40,4 @@ async def home_page():
                 student_info_ui()
         #右側卡片
         with ui.card().classes("h-full rounded-2xl"):
-            render_right_panel("home", None)
+            await render_right_panel("default", None)

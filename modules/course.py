@@ -9,12 +9,13 @@ class Course:
         self.seme = ""
         self.name = ""
         self.id = ""
+        self.data = {}
 
         self.description_url = ""
         self.syllabus_url = ""
         self.file_url = ""
     
-    async def get_syllabus(self) -> dict|None:
+    async def fetch_syllabus(self) -> dict|None:
         response = await self.scraper.get(self.syllabus_url)
         if not response:
             return None
@@ -50,10 +51,22 @@ class Course:
         consult = re.search(r'<td>(.+?)</tr>', tr_labels[9]).group(1) #type:ignore
 
         info_list.extend([email, syllabus, schedule, score, textbook, consult])
-        return dict(zip(index, info_list))
+        data = dict(zip(index, info_list))
+
+        credit_type = {"○":"部訂共同必修",
+                       "△":"校訂共同必修",
+                       "☆":"共同選修",
+                       "●":"部訂專業必修",
+                       "▲":"校訂專業必修",
+                       "★":"專業選修"}
+
+        data["班級"] = data["班級"].replace("<BR>", "、")
+        data["必/選"] = credit_type[data["必/選"]]
+
+        self.data.update(data)
 
 
-    async def get_description(self) -> dict|None:
+    async def fetch_description(self) -> dict|None:
         response = await self.scraper.get(self.description_url)
         if not response:
             return None
@@ -64,7 +77,7 @@ class Course:
         en_search = re.search(r'English Description\s+<td colspan=4>(.+?)</table>', response.text, re.DOTALL)
         en_description = en_search.group(1).rstrip("\n")  #type:ignore
 
-        return {"ch_description": ch_description, "en_description": en_description}
+        self.data.update({"ch_description": ch_description, "en_description": en_description})
 
 
 if __name__ == "__main__":
