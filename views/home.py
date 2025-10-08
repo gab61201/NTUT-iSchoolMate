@@ -10,6 +10,11 @@ async def home_page():
     if not app.storage.general.get("login_status") :
         ui.navigate.to('/login')
         return
+    else:
+        user = getattr(app, "user")
+        for seme in user.seme_list:
+            await user.fetch_seme_timetable(seme)
+
 
     """定義主頁的佈局和內容"""
     with ui.grid(columns='1fr 5fr 8fr').classes("w-full h-[calc(100vh-32px)]"):
