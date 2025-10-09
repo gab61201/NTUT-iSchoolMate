@@ -16,11 +16,11 @@ async def render_course(course: Course):
     await course.fetch_description()
     loading.delete()
 
-    with ui.row().classes("w-full h-[10%]"):
-        ui.space().classes("w-[10%]")
-        ui.label(f"{course.seme[:3]} - {course.seme[-1]}").classes("text-2xl w-[10%]")
-        ui.label(f"{course.name}").classes("text-2xl w-[60%]")
-        ui.label(f"{course.id}").classes("text-2xl w-[20%]")
+    with ui.grid(columns='1fr 1fr 5fr 2fr').classes("w-full h-[10%] items-center"):
+        ui.space()
+        ui.label(f"{course.seme[:3]} - {course.seme[-1]}").classes("text-2xl")
+        ui.label(f"{course.name}").classes("text-2xl")
+        ui.label(f"{course.id}").classes("text-2xl")
 
     with ui.grid(rows=3, columns=4).classes("w-full h-[40%]"):
         with ui.card().classes("w-full h-full justify-center rounded-xl"):
@@ -40,9 +40,12 @@ async def render_course(course: Course):
 
         ui.button("課程資訊", color="white").classes("w-full h-full text-lg rounded-xl")\
             .on_click(lambda: render_right_panel.refresh("description", course))
-        ui.button("課程錄影", color="white").classes("w-full h-full text-lg rounded-xl")
-        ui.button("i學園公告", color="white").classes("w-full h-full text-lg rounded-xl")
-        ui.button("i學園檔案", color="white").classes("w-full h-full text-lg rounded-xl")
+        ui.button("課程錄影", color="white").classes("w-full h-full text-lg rounded-xl")\
+            .on_click(lambda: render_right_panel.refresh("recordings", course))
+        ui.button("i學園公告", color="white").classes("w-full h-full text-lg rounded-xl")\
+            .on_click(lambda: render_right_panel.refresh("announcement", course))
+        ui.button("i學園檔案", color="white").classes("w-full h-full text-lg rounded-xl")\
+            .on_click(lambda: render_right_panel.refresh("ischool", course))
 
     
 
@@ -53,7 +56,7 @@ async def render_course(course: Course):
             e.set_visibility(False)
             preview.set_visibility(True)
         with ui.scroll_area().classes("w-full h-full rounded-xl").props('content-class="p-0"') as e:
-            editor = ui.editor(placeholder='在此輸入 Markdown 語法，esc 退出編輯模式').on('keydown.esc', close_edit)\
+            editor = ui.editor(placeholder='在此輸入 Markdown 語法，按 esc 退出編輯模式').on('keydown.esc', close_edit)\
                 .classes('w-full h-full').props('toolbar=[]').bind_value(user_notes_dict, course.id)
         e.set_visibility(False)
 
@@ -64,24 +67,52 @@ async def render_course(course: Course):
             .on("dblclick", open_edit).tooltip("雙擊以編輯") as preview:
             ui.markdown().classes("w-full h-full select-none").bind_content_from(editor, 'value')
 
-        
 
 def render_description(course:Course):
-    ui.button(icon="keyboard_arrow_left").classes("text-lg text-black bg-white").props("rounded flat")\
-        .on_click(lambda: render_right_panel.refresh("course", course))
+    ...
 
 
-def render_ischool():
+def render_recordings(course:Course):
+    ...
+
+
+def render_announcement(course: Course):
+    ...
+
+
+def render_ischool(course: Course):
     ...
 
 
 @ui.refreshable
-async def render_right_panel(render_type: Literal["default", "course", "description", "ischool"], arg: Any):
+async def render_right_panel(render_type: Literal["default", "course", "recordings", "description", "announcement", "ischool"], arg: Any):
+    
+    def render_title(course:Course):
+        with ui.grid(columns='1fr 1fr 5fr 2fr').classes("w-full h-[10%] items-center"):
+            ui.button(icon="keyboard_arrow_left").classes("text-lg text-black bg-white").props("rounded flat")\
+                .on_click(lambda: render_right_panel.refresh("course", course))
+            ui.label(f"{course.seme[:3]} - {course.seme[-1]}").classes("text-2xl")
+            ui.label(f"{course.name}").classes("text-2xl")
+            ui.label(f"{course.id}").classes("text-2xl")
+
     if render_type == "default":
         render_default()
+
     elif render_type == "course":
         await render_course(arg)
+
     elif render_type == "description":
+        render_title(arg)
         render_description(arg)
+
+    elif render_type == "recordings":
+        render_title(arg)
+        render_recordings(arg)
+
+    elif render_type == "announcement":
+        render_title(arg)
+        render_announcement(arg)
+        
     elif render_type == "ischool":
-        ...
+        render_title(arg)
+        render_ischool(arg)
