@@ -108,58 +108,68 @@ async def render_ischool_files(course: Course):
         """
         print(e.value)
         ui.notify(e.value)
+    
+    with ui.scroll_area().classes("w-full h-full"):
+        tree = ui.tree(course.file_tree, label_key='text', children_key="item", node_key='identifier', on_select=lambda e:on_select(e))\
+        .classes("text-lg w-full").expand().on('open', open_link).on('download', download)
 
-    tree = ui.tree(course.file_tree, label_key='text', children_key="item", node_key='identifier', on_select=lambda e:on_select(e))\
-    .classes("text-lg").expand().on('open', open_link).on('download', download)
+        body_template = r'''
+        <div v-if="props.node.leaf" :props="props" class="flex flex-nowrap items-start justify-between px-8 py-1 gap-2 w-full text-grey">
 
-    tree_template = r'''
-    <div v-if="props.node.leaf" :props="props" class="flex items-center gap-2 w-full text-grey">
-        
-        <span class="flex-grow text-sm truncate">
-            {{
-            props.node.href
-                ? (
-                    props.node.href.startsWith('https://istudy.ntut.edu.tw')
-                        ? decodeURIComponent(props.node.href.split('/').pop())
-                        : props.node.href
-                )
-                : ''
-            }}
-        </span>
-
-        <q-btn-group flat>
-            <q-btn
-                v-if="
-                    props.node.href && 
-                    (
-                        !props.node.href.startsWith('https://istudy.ntut.edu.tw') || /* 非 istudy 連結 (純外部連結) */
-                        props.node.href.toLowerCase().endsWith('.pdf') ||               /* istudy 連結且可瀏覽 */
-                        props.node.href.toLowerCase().endsWith('.txt') ||
-                        props.node.href.toLowerCase().endsWith('.png') ||
-                        props.node.href.toLowerCase().endsWith('.jpg') ||
-                        props.node.href.toLowerCase().endsWith('.html')
-                        /* ... 可以在此處加入更多可瀏覽類型 */
+            <span class="text-sm break-words">
+                {{
+                props.node.href
+                    ? (
+                        props.node.href.startsWith('https://istudy.ntut.edu.tw')
+                            ? decodeURIComponent(props.node.href.split('/').pop())
+                            : props.node.href
                     )
-                "
-                icon="open_in_new" color="primary" size="md" flat dense
-                @click.stop="$parent.$emit('open', props.node)">
-                <q-tooltip>在新分頁開啟</q-tooltip>
-            </q-btn>
-            
-            <q-btn
-                v-if="
-                    props.node.href && 
-                    props.node.href.startsWith('https://istudy.ntut.edu.tw')
-                "
-                icon="download" color="accent" size="md" flat dense
-                @click.stop="$parent.$emit('download', props.node)">
-                <q-tooltip>下載檔案</q-tooltip>
-            </q-btn>
+                    : ''
+                }}
+            </span>
 
-        </q-btn-group>
-    </div>
-    '''
-    tree.add_slot('default-body', tree_template)
+            <q-btn-group flat class="flex-shrink-0">
+                <q-btn
+                    v-if="
+                        props.node.href && 
+                        (
+                            !props.node.href.startsWith('https://istudy.ntut.edu.tw') || /* 非 istudy 連結 (純外部連結) */
+                            props.node.href.toLowerCase().endsWith('.pdf') ||               /* istudy 連結且可瀏覽 */
+                            props.node.href.toLowerCase().endsWith('.txt') ||
+                            props.node.href.toLowerCase().endsWith('.png') ||
+                            props.node.href.toLowerCase().endsWith('.jpg') ||
+                            props.node.href.toLowerCase().endsWith('.html')
+                            /* ... 可以在此處加入更多可瀏覽類型 */
+                        )
+                    "
+                    icon="open_in_new" color="primary" size="md" flat dense
+                    @click.stop="$parent.$emit('open', props.node)">
+                    <q-tooltip>在新分頁開啟</q-tooltip>
+                </q-btn>
+                <q-btn
+                    v-if="
+                        props.node.href && 
+                        props.node.href.startsWith('https://istudy.ntut.edu.tw')
+                    "
+                    icon="download" color="accent" size="md" flat dense
+                    @click.stop="$parent.$emit('download', props.node)">
+                    <q-tooltip>下載檔案</q-tooltip>
+                </q-btn>
+            </q-btn-group>
+        </div>
+        '''
+        tree.add_slot('default-body', body_template)
+
+        header_template = r'''
+        <div class="flex items-center w-full px-4 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            style="background-color: #f3f4f6 !important; /* 確保覆蓋預設樣式 */">
+            <span class="flex-grow text-lg">
+                {{ props.node.text }}
+            </span>
+        </div>
+        '''
+        tree.add_slot('default-header', header_template)
+        
 
 @ui.refreshable
 async def render_right_panel(render_type: Literal["default", "course", "recordings", "description", "announcement", "ischool_files"], arg: Any):

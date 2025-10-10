@@ -48,7 +48,7 @@ async def startup():
             ui.notify("登入課程系統失敗", color='negative')
         else:
             for seme in user.seme_list:
-                await user.fetch_seme_timetable(seme, last_user_id)
+                await user.fetch_seme_timetable(seme)
                 
             await user.fetch_course_list()
         app.storage.general["login_status"] = True
