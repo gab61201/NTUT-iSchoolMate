@@ -65,7 +65,7 @@ class Course:
                        "★":"專業選修"}
 
         data["班級"] = data["班級"].replace("<BR>", "、")
-        data["必/選"] = data["必/選"] + credit_type[data["必/選"]]
+        data["必/選"] = f'{data["必/選"]} {credit_type[data["必/選"]]}'
 
         self.data.update(data)
 
