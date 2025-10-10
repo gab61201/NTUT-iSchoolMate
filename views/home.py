@@ -1,6 +1,5 @@
 import asyncio
 from nicegui import app, ui
-from .home_components.navigation_bar import *
 from .home_components.middle_panel import *
 from .home_components.right_panel import *
 
@@ -23,7 +22,7 @@ async def home_page():
 
         #導覽列
         with ui.column().classes('w-full h-full rounded-2xl items-center justify-between'):
-            
+
             ui.button(icon="school").classes("w-full text-2xl text-black bg-white").props("rounded flat")
 
             with ui.tabs().classes('w-full').props("vertical") as tabs:
