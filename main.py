@@ -39,12 +39,19 @@ async def startup():
         webbrowser.open(f"http://localhost:8000/login")
 
     elif auto_login and await scraper.login(last_user_id, password):
-
+        ui.notify('錯誤的帳號或密碼，錯誤達五次後鎖定帳號15分鐘', color='negative')
         if not await scraper.oauth("aa_0010-oauth"):
-             ui.notify("登入課程系統失敗", color='negative')
+            ui.notify("登入課程系統失敗", color='negative')
+        elif not await scraper.oauth("ischool_plus_oauth"):
+            ui.notify("登入課程系統失敗", color='negative')
         elif not await user.fetch_year_seme_list():
-             ui.notify("登入課程系統失敗", color='negative')
-
+            ui.notify("登入課程系統失敗", color='negative')
+        else:
+            for seme in user.seme_list:
+                await user.fetch_seme_timetable(seme, last_user_id)
+                
+            await user.fetch_course_list()
+        app.storage.general["login_status"] = True
         webbrowser.open(f"http://localhost:8000/home")
 
     else:
@@ -66,4 +73,4 @@ async def shutdown():
 
 app.on_startup(startup)
 app.on_shutdown(shutdown)
-ui.run(port=8000, show=False, reload=False)
+ui.run(port=8000, show=False, reload=False, uvicorn_logging_level="warning")

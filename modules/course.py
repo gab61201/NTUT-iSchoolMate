@@ -15,7 +15,7 @@ class Course:
         self.description_url = ""
         self.syllabus_url = ""
         self.file_url = ""
-        self.file_tree = None
+        self.file_tree = []
         self.file_dict = {}
         self.video_dict = {}
     
@@ -85,8 +85,13 @@ class Course:
 
     
     async def fetch_files(self) -> bool:
+        if not self.file_url:
+            print("未知 i學園 file_url")
+            return False
+        
         response = await self.scraper.get(self.file_url)
         if not response:
+
             return False
         self.file_tree = response.json()["data"]["path"]["item"]
 

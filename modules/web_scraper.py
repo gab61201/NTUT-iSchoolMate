@@ -16,7 +16,7 @@ from .constants import *
 
 urllib3.disable_warnings(InsecureRequestWarning)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.WARNING,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -51,16 +51,16 @@ class WebScraper:
 
             logging.info("登入請求成功，正在解析 JSON 回應...")
             json_response = login_response.json()
-            print(json_response)
             
             if json_response.get("success", False) :
-                app.storage.general["login_status"] = True
+                # app.storage.general["login_status"] = True
                 app.storage.general["last_user_id"] = student_id
-                getattr(app, "credentials").save(student_id, password)
+                # getattr(app, "credentials").save(student_id, password)
                 logging.info(f"帳號 {student_id} 登入成功")
                 return True
             else:
                 logging.warning(f"帳號 {student_id} 登入失敗")
+                print(json_response)
                 return False
 
         except httpx.TimeoutException:
@@ -197,8 +197,8 @@ class WebScraper:
 
     async def fetch_seme_timetable_html(self, seme: str) -> str|None:
         student_id = app.storage.general["last_user_id"]
-        timetable_url = (f"https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code={student_id}&year={seme[:3]}&sem={seme[-1]}")
-
+        timetable_url = f"https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code={student_id}&year={seme[:3]}&sem={seme[-1]}"
+        print(timetable_url)
         try:
             response = await self.session.get(timetable_url, timeout=10)
             response.raise_for_status()
@@ -256,7 +256,7 @@ class WebScraper:
         try:
             response = await self.session.get(url, timeout=10)
             response.raise_for_status()
-            logging.info(f"成功獲取ischool課程列表頁面。")
+            logging.info(f"成功獲取{url}")
             return response
         
         except httpx.TimeoutException:
@@ -275,7 +275,7 @@ class WebScraper:
             return None
 
         except Exception as e:
-            logging.critical(f"抓取ischool課程列表時發生未預期的嚴重錯誤: {e}", exc_info=True)
+            logging.critical(f"抓取{url}時發生未預期的嚴重錯誤: {e}", exc_info=True)
             return None
 
     # async def keep_login_status(self):
@@ -298,18 +298,17 @@ if __name__ == "__main__":
             return
         else:
             print("登入成功")
-        if not await scraper.oauth("ischool_plus_oauth"):
+        if not await scraper.oauth("aa_0010-oauth"):
             print("oauth error")
             return
         
-        data={
-            "action":"getSearchCourses",
-            "id":"345918",
-            "perpage":"20"
-        }
-        response = await scraper.session.post(ISCHOOL_SEARCH_URL, data=data)
-        print(response.json())
-        with open("howmanyseme.html", 'w', encoding='utf-8') as f:
-            f.write(response.text)
+        response = await scraper.fetch_seme_timetable_html("1141")
+        with open('fuck.html', 'w', encoding='utf-8') as f:
+            f.write(response)
+        # with open("courselist1.html", 'w', encoding='utf-8') as f:
+        #     f.write(response)
+        response1 = await scraper.session.get('https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code=113820025&year=114&sem=1')
+        with open('fuck1.html', 'w', encoding='utf-8') as f:
+            f.write(response1.text)
             
     asyncio.run(main())

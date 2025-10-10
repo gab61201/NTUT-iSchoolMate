@@ -41,7 +41,7 @@ async def render_course(course: Course):
         ui.button("i學園公告", color="white").classes("w-full h-full text-lg rounded-xl")\
             .on_click(lambda: render_right_panel.refresh("announcement", course))
         ui.button("i學園檔案", color="white").classes("w-full h-full text-lg rounded-xl")\
-            .on_click(lambda: render_right_panel.refresh("ischool", course))
+            .on_click(lambda: render_right_panel.refresh("ischool_files", course))
 
     
 
@@ -76,12 +76,93 @@ def render_announcement(course: Course):
     ...
 
 
-def render_ischool(course: Course):
-    ...
+async def render_ischool_files(course: Course):
+    user = getattr(app, "user")
+    print(f"user.course_list: {user.course_list}")
+    if not await course.fetch_files():
+        ui.label("無法獲取檔案")
+        return
+    
+    def open_link(e):
+        """在新分頁中開啟連結"""
+        print(e)
+        node_data = e.args
+        url = node_data.get('href')
+        if url and url.startswith('http'):
+            # 使用 ui.open 可以在新分頁開啟網址
+            ui.navigate.to(url, new_tab=True)
+            ui.notify(f"正在開啟：{node_data.get('text')}", type='positive')
+        else:
+            ui.notify(f"無法開啟無效的連結：{url}", type='warning')
 
+    # 處理「複製連結」按鈕點擊事件
+    async def download(e):
+        node_data = e.args
+        url = node_data.get('href', '')
+        ui.notify(f"正在下載：{url}")
+
+    async def on_select(e):
+        """
+        若非葉節點，則開啟節點
+        若為葉節點，則開啟預覽
+        """
+        print(e.value)
+        ui.notify(e.value)
+
+    tree = ui.tree(course.file_tree, label_key='text', children_key="item", node_key='identifier', on_select=lambda e:on_select(e))\
+    .classes("text-lg").expand().on('open', open_link).on('download', download)
+
+    tree_template = r'''
+    <div v-if="props.node.leaf" :props="props" class="flex items-center gap-2 w-full text-grey">
+        
+        <span class="flex-grow text-sm truncate">
+            {{
+            props.node.href
+                ? (
+                    props.node.href.startsWith('https://istudy.ntut.edu.tw')
+                        ? decodeURIComponent(props.node.href.split('/').pop())
+                        : props.node.href
+                )
+                : ''
+            }}
+        </span>
+
+        <q-btn-group flat>
+            <q-btn
+                v-if="
+                    props.node.href && 
+                    (
+                        !props.node.href.startsWith('https://istudy.ntut.edu.tw') || /* 非 istudy 連結 (純外部連結) */
+                        props.node.href.toLowerCase().endsWith('.pdf') ||               /* istudy 連結且可瀏覽 */
+                        props.node.href.toLowerCase().endsWith('.txt') ||
+                        props.node.href.toLowerCase().endsWith('.png') ||
+                        props.node.href.toLowerCase().endsWith('.jpg') ||
+                        props.node.href.toLowerCase().endsWith('.html')
+                        /* ... 可以在此處加入更多可瀏覽類型 */
+                    )
+                "
+                icon="open_in_new" color="primary" size="md" flat dense
+                @click.stop="$parent.$emit('open', props.node)">
+                <q-tooltip>在新分頁開啟</q-tooltip>
+            </q-btn>
+            
+            <q-btn
+                v-if="
+                    props.node.href && 
+                    props.node.href.startsWith('https://istudy.ntut.edu.tw')
+                "
+                icon="download" color="accent" size="md" flat dense
+                @click.stop="$parent.$emit('download', props.node)">
+                <q-tooltip>下載檔案</q-tooltip>
+            </q-btn>
+
+        </q-btn-group>
+    </div>
+    '''
+    tree.add_slot('default-body', tree_template)
 
 @ui.refreshable
-async def render_right_panel(render_type: Literal["default", "course", "recordings", "description", "announcement", "ischool"], arg: Any):
+async def render_right_panel(render_type: Literal["default", "course", "recordings", "description", "announcement", "ischool_files"], arg: Any):
     
     def render_title(course:Course, page_name: str):
         with ui.row().classes("w-full h-[10%], items-center"):
@@ -108,6 +189,6 @@ async def render_right_panel(render_type: Literal["default", "course", "recordin
         render_title(arg, "i學園公告")
         render_announcement(arg)
         
-    elif render_type == "ischool":
+    elif render_type == "ischool_files":
         render_title(arg, "i學園檔案")
-        render_ischool(arg)
+        await render_ischool_files(arg)

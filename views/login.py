@@ -14,14 +14,17 @@ async def login_page():
         if not await scraper.login(student_id.value, password.value):
             ui.notify('錯誤的帳號或密碼，錯誤達五次後鎖定帳號15分鐘', color='negative')
         elif not await scraper.oauth("aa_0010-oauth"):
-             ui.notify("登入課程系統失敗", color='negative')
-        elif not await user.fetch_year_seme_list():
-             ui.notify("登入課程系統失敗", color='negative')
+            ui.notify("登入課程系統失敗", color='negative')
+        elif not await scraper.oauth("ischool_plus_oauth"):
+            ui.notify("登入課程系統失敗", color='negative')
         else:
+            await user.fetch_year_seme_list()
             for seme in user.seme_list:
+                print(seme)
                 await user.fetch_seme_timetable(seme)
                 
             await user.fetch_course_list()
+            app.storage.general["login_status"] = True
             ui.navigate.to('/home')
             return
         
