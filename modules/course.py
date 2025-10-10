@@ -15,6 +15,9 @@ class Course:
         self.description_url = ""
         self.syllabus_url = ""
         self.file_url = ""
+        self.file_tree = None
+        self.file_dict = {}
+        self.video_dict = {}
     
     async def fetch_syllabus(self) -> dict|None:
         response = await self.scraper.get(self.syllabus_url)
@@ -62,7 +65,7 @@ class Course:
                        "★":"專業選修"}
 
         data["班級"] = data["班級"].replace("<BR>", "、")
-        data["必/選"] = credit_type[data["必/選"]]
+        data["必/選"] = data["必/選"] + credit_type[data["必/選"]]
 
         self.data.update(data)
 
@@ -79,6 +82,26 @@ class Course:
         en_description = en_search.group(1).rstrip("\n")  #type:ignore
 
         self.data.update({"ch_description": ch_description, "en_description": en_description})
+
+    
+    async def fetch_files(self) -> bool:
+        response = await self.scraper.get(self.file_url)
+        if not response:
+            return False
+        self.file_tree = response.json()["data"]["path"]["item"]
+
+        def parse_tree(tree: list):
+            for i in range(len(tree) - 1, -1, -1):
+                if tree[i]["item"]:
+                    parse_tree(tree[i]["item"])
+                elif re.match(r'istream://', tree[i]["href"]):
+                    self.video_dict[tree[i]["identifier"]] = tree[i]
+                    del tree[i]
+                else:
+                    self.file_dict[tree[i]["identifier"]] = tree[i]
+
+        parse_tree(self.file_tree)
+        return True
 
 
 if __name__ == "__main__":
