@@ -17,12 +17,7 @@ from .constants import *
 urllib3.disable_warnings(InsecureRequestWarning)
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    encoding='utf-8',
-    handlers=[
-        logging.FileHandler("scraper.log", mode='w', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
+    format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
 
