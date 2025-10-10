@@ -16,11 +16,7 @@ async def render_course(course: Course):
     await course.fetch_description()
     loading.delete()
 
-    with ui.grid(columns='1fr 1fr 5fr 2fr').classes("w-full h-[10%] items-center"):
-        ui.space()
-        ui.label(f"{course.seme[:3]} - {course.seme[-1]}").classes("text-2xl")
-        ui.label(f"{course.name}").classes("text-2xl")
-        ui.label(f"{course.id}").classes("text-2xl")
+    ui.label(f"{course.seme}_{course.name}_{course.id}").classes("text-2xl w-full h-[10%] items-center")
 
     with ui.grid(rows=3, columns=4).classes("w-full h-[40%]"):
         with ui.card().classes("w-full h-full justify-center rounded-xl"):
@@ -87,13 +83,12 @@ def render_ischool(course: Course):
 @ui.refreshable
 async def render_right_panel(render_type: Literal["default", "course", "recordings", "description", "announcement", "ischool"], arg: Any):
     
-    def render_title(course:Course):
-        with ui.grid(columns='1fr 1fr 5fr 2fr').classes("w-full h-[10%] items-center"):
-            ui.button(icon="keyboard_arrow_left").classes("text-lg text-black bg-white").props("rounded flat")\
-                .on_click(lambda: render_right_panel.refresh("course", course))
-            ui.label(f"{course.seme[:3]} - {course.seme[-1]}").classes("text-2xl")
-            ui.label(f"{course.name}").classes("text-2xl")
-            ui.label(f"{course.id}").classes("text-2xl")
+    def render_title(course:Course, page_name: str):
+        with ui.row().classes("w-full h-[10%], items-center"):
+            ui.label(f"{course.seme}_{course.name}_{course.id}").classes("text-2xl hover:underline cursor-pointer")\
+                .on('click', lambda: render_right_panel.refresh("course", course))
+            ui.icon("chevron_right").classes("text-2xl text-black bg-white").props("rounded flat")
+            ui.label(page_name).classes("text-2xl")
 
     if render_type == "default":
         render_default()
@@ -102,17 +97,17 @@ async def render_right_panel(render_type: Literal["default", "course", "recordin
         await render_course(arg)
 
     elif render_type == "description":
-        render_title(arg)
+        render_title(arg, "課程資訊")
         render_description(arg)
 
     elif render_type == "recordings":
-        render_title(arg)
+        render_title(arg, "課程錄影")
         render_recordings(arg)
 
     elif render_type == "announcement":
-        render_title(arg)
+        render_title(arg, "i學園公告")
         render_announcement(arg)
         
     elif render_type == "ischool":
-        render_title(arg)
+        render_title(arg, "i學園檔案")
         render_ischool(arg)
