@@ -28,7 +28,7 @@ class WebScraper:
             "User-Agent": "Direk android App",
             "Content-Type": "application/x-www-form-urlencoded"
         }
-        self.session = httpx.AsyncClient(verify=False)
+        self.session = httpx.AsyncClient(verify=False, follow_redirects=True, timeout=None)
         self.session.headers.update(headers)
 
     async def login(self, student_id: str, password: str) -> bool:

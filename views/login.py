@@ -25,6 +25,7 @@ async def login_page():
                 
             await user.fetch_course_list()
             app.storage.general["login_status"] = True
+            user.student_id = student_id.value
             ui.navigate.to('/home')
             return
         

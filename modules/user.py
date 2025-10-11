@@ -10,6 +10,7 @@ class UserManager:
         self.seme_list = []
         self.timetable: dict = {}
         self.course_list: dict = {} #course_list[seme][couse_id]: Course()
+        self.student_id = ""
 
     async def fetch_year_seme_list(self) -> bool:
         """

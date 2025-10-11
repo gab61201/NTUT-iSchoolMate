@@ -52,6 +52,7 @@ async def startup():
                 
             await user.fetch_course_list()
         app.storage.general["login_status"] = True
+        user.student_id = last_user_id
         webbrowser.open(f"http://localhost:8000/home")
 
     else:

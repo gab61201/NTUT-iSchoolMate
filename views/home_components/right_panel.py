@@ -1,6 +1,10 @@
 from nicegui import app, ui
+from fastapi.responses import StreamingResponse, HTMLResponse
+from urllib.parse import urlparse, parse_qs
 from typing import Literal, Any
 from modules.course import Course
+from modules.web_scraper import WebScraper
+from modules.user import UserManager
 
 
 def render_default():
@@ -8,8 +12,6 @@ def render_default():
 
 
 async def render_course(course: Course):
-    user = getattr(app, "user")
-
     with ui.skeleton().classes("w-full h-full rounded-2xl flex justify-center items-center") as loading:
         ui.spinner(size='lg')
     await course.fetch_syllabus()
@@ -46,6 +48,7 @@ async def render_course(course: Course):
     
 
     with ui.card().tight().classes("w-full h-[50%] rounded-lg"):
+        user = getattr(app, "user")
         user_notes_dict = app.storage.general.setdefault(user.student_id, {})
 
         def close_edit():
@@ -79,10 +82,17 @@ def render_announcement(course: Course):
 async def render_ischool_files(course: Course):
     user = getattr(app, "user")
     print(f"user.course_list: {user.course_list}")
+    with ui.skeleton().classes("w-full h-[90%] rounded-xl flex justify-center items-center") as loading:
+        ui.spinner(size='lg')
     if not await course.fetch_files():
-        ui.label("無法獲取檔案")
+        ui.label("無法獲取檔案").classes("text-2xl w-full")
         return
-    
+    loading.delete()
+
+    if not course.file_tree:
+        ui.label("沒有上傳檔案").classes("text-2xl w-full")
+        return
+
     def open_link(e):
         """在新分頁中開啟連結"""
         print(e)
@@ -90,24 +100,33 @@ async def render_ischool_files(course: Course):
         url = node_data.get('href')
         if url and url.startswith('http'):
             # 使用 ui.open 可以在新分頁開啟網址
-            ui.navigate.to(url, new_tab=True)
+            ui.navigate.to(f"/file_preview?url={url}", new_tab=True)
             ui.notify(f"正在開啟：{node_data.get('text')}", type='positive')
         else:
             ui.notify(f"無法開啟無效的連結：{url}", type='warning')
 
     # 處理「複製連結」按鈕點擊事件
     async def download(e):
-        node_data = e.args
-        url = node_data.get('href', '')
-        ui.notify(f"正在下載：{url}")
+        original_url = e.args.get('href', '')
+        node = e.args.get('node', {})
+        text = node.get('text', 'Unknown File')
+        
+        if original_url:
+            download_url = f"/file_download?url={original_url}"
+            ui.navigate.to(download_url)
+            ui.notify(f'開始下載: {text}', type='info')
+        else:
+            ui.notify(f'錯誤: 找不到下載連結 ({text})', type='negative')
 
     async def on_select(e):
         """
         若非葉節點，則開啟節點
         若為葉節點，則開啟預覽
         """
-        print(e.value)
-        ui.notify(e.value)
+        if course.file_dict[e.value].get("leaf"):
+            render_right_panel.refresh('file_preview', course, course.file_dict[e.value]["text"], e.value)
+        else:
+            ui.notify(e.value)
     
     with ui.scroll_area().classes("w-full h-full"):
         tree = ui.tree(course.file_tree, label_key='text', children_key="item", node_key='identifier', on_select=lambda e:on_select(e))\
@@ -169,36 +188,106 @@ async def render_ischool_files(course: Course):
         </div>
         '''
         tree.add_slot('default-header', header_template)
-        
+
+
+async def render_preview(course: Course, page_name:str, identifier: str):
+    proxy_url = course.file_dict[identifier]["href"]
+
+    with ui.row().classes("w-full h-[10%] items-center"):
+        ui.label(f"{course.seme}_{course.name}_{course.id}").classes("text-2xl hover:underline cursor-pointer")\
+            .on('click', lambda: render_right_panel.refresh("course", course))
+        ui.icon("chevron_right").classes("text-2xl text-black bg-white").props("rounded flat")
+        ui.label("i學園檔案").classes("text-2xl hover:underline cursor-pointer")\
+            .on('click', lambda: render_right_panel.refresh("ischool_files", course))
+        ui.icon("chevron_right").classes("text-2xl text-black bg-white").props("rounded flat")
+        ui.label(page_name).classes("text-2xl")
+
+    ui.element('iframe').props(f'src="/file_preview?url={proxy_url}"') \
+        .classes('w-full h-full border-2 rounded-lg')
+
+
+@app.get("/file_preview")
+async def file_preview(url: str):
+    user: UserManager = getattr(app, "user")
+    
+    async def stream_file():
+        scraper_session = user.scraper.session
+        async with scraper_session.stream("GET", url) as resp:
+            async for chunk in resp.aiter_bytes():
+                yield chunk
+
+    return StreamingResponse(
+        stream_file(),
+        headers={"Content-Disposition": "inline"}  # 關鍵：讓瀏覽器預覽，而非下載
+    )
+
+
+@app.get("/file_download")
+async def file_download(url: str):
+    user: UserManager = getattr(app, "user")
+    scraper_session = user.scraper.session
+    parsed_url = urlparse(url)
+    filename = parsed_url.path.split('/')[-1]
+
+    if not filename:
+        filename = "downloaded_file"
+    try:
+        from urllib.parse import unquote
+        filename = unquote(filename)
+    except Exception:
+        pass
+
+    async def stream_file():
+        async with scraper_session.stream("GET", url) as resp:
+            async for chunk in resp.aiter_bytes():
+                yield chunk
+
+    headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"}
+
+    return StreamingResponse(
+        stream_file(),
+        media_type="application/octet-stream", # 通用二進制類型
+        headers=headers
+    )
+
 
 @ui.refreshable
-async def render_right_panel(render_type: Literal["default", "course", "recordings", "description", "announcement", "ischool_files"], arg: Any):
+async def render_right_panel(render_type: Literal["default",
+                                                  "course",
+                                                  "recordings",
+                                                  "description",
+                                                  "announcement",
+                                                  "ischool_files",
+                                                  "file_preview"], *arg: Any):
     
-    def render_title(course:Course, page_name: str):
-        with ui.row().classes("w-full h-[10%], items-center"):
+    def render_title(course:Course, file_name: str):
+        with ui.row().classes("w-full h-[10%] items-center"):
             ui.label(f"{course.seme}_{course.name}_{course.id}").classes("text-2xl hover:underline cursor-pointer")\
                 .on('click', lambda: render_right_panel.refresh("course", course))
             ui.icon("chevron_right").classes("text-2xl text-black bg-white").props("rounded flat")
-            ui.label(page_name).classes("text-2xl")
+            ui.label(file_name).classes("text-2xl")
 
     if render_type == "default":
         render_default()
 
     elif render_type == "course":
-        await render_course(arg)
+        await render_course(arg[0])
 
     elif render_type == "description":
-        render_title(arg, "課程資訊")
-        render_description(arg)
+        render_title(arg[0], "課程資訊")
+        render_description(arg[0])
 
     elif render_type == "recordings":
-        render_title(arg, "課程錄影")
-        render_recordings(arg)
+        render_title(arg[0], "課程錄影")
+        render_recordings(arg[0])
 
     elif render_type == "announcement":
-        render_title(arg, "i學園公告")
-        render_announcement(arg)
+        render_title(arg[0], "i學園公告")
+        render_announcement(arg[0])
         
     elif render_type == "ischool_files":
-        render_title(arg, "i學園檔案")
-        await render_ischool_files(arg)
+        render_title(arg[0], "i學園檔案")
+        await render_ischool_files(arg[0])
+    
+    elif render_type == "file_preview":
+        await render_preview(*arg)
