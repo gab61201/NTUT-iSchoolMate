@@ -92,38 +92,13 @@ async def render_ischool_files(course: Course):
         ui.label("沒有上傳檔案").classes("text-2xl w-full")
         return
 
-    def open_in_new(e):
-        """在新分頁中開啟連結"""
-        node_data = e.args
-        print(node_data)
-
-        url = node_data.get('href')
-        if url and url.startswith('http'):
-            ui.navigate.to(f"/file_preview?url={url}", new_tab=True)
-            ui.notify(f"正在開啟：{node_data.get('text')}", type='positive')
-        else:
-            ui.notify(f"無法開啟無效的連結：{url}", type='warning')
-
-    async def download(e):
-        node_data = e.args
-        print(node_data)
-
-        original_url = e.args.get('href', '')
-        text = e.args.get('text', 'Unknown File')
-        
-        if original_url:
-            download_url = f"/file_download?url={original_url}"
-            ui.navigate.to(download_url)
-            ui.notify(f'開始下載: {text}', type='info')
-        else:
-            ui.notify(f'錯誤: 找不到下載連結 ({text})', type='negative')
-
     async def on_select(e):
         """
         若非葉節點，則開啟節點
         若為葉節點，則開啟預覽
         """
-        if course.file_dict[e.value].get("leaf"):
+        if course.file_dict.get(e.value) and course.file_dict[e.value].get("leaf")\
+            and course.file_dict[e.value].get("href") != "about:blank":
             render_right_panel.refresh('file_preview', course, course.file_dict[e.value]["text"], e.value)
     
     with ui.scroll_area().classes("w-full h-full"):
@@ -131,7 +106,7 @@ async def render_ischool_files(course: Course):
         .classes("text-lg w-full").expand()
 
         body_template = r'''
-        <div v-if="props.node.leaf" :props="props" class="flex flex-nowrap items-start justify-between px-8 py-1 gap-2 w-full text-grey">
+        <div v-if="props.node.leaf && props.node.href !== 'about:blank'" :props="props" class="flex flex-nowrap items-start justify-between px-8 py-1 gap-2 w-full text-grey">
             <span class="text-sm break-words">
                 {{
                 props.node.href
@@ -148,13 +123,13 @@ async def render_ischool_files(course: Course):
         tree.add_slot('default-body', body_template)
 
         header_template = r'''
-        <div class="flex items-center w-full px-4 py-1 rounded bg-gray-200 hover:bg-gray-300"
+        <div class="flex items-center w-full px-4 py-1 gap-4 rounded bg-gray-200 hover:bg-gray-300"
             style="background-color: #f3f4f6 !important; /* 確保覆蓋預設樣式 */">
             <span class="flex-grow text-lg">
                 {{ props.node.text }}
             </span>
             <a v-if="
-                    props.node.href && 
+                    props.node.href && props.node.href !== 'about:blank' &&
                     (
                         !props.node.href.startsWith('https://istudy.ntut.edu.tw') || /* 非 istudy 連結 (純外部連結) */
                         props.node.href.toLowerCase().endsWith('.pdf') ||               /* istudy 連結且可瀏覽 */
@@ -165,28 +140,33 @@ async def render_ischool_files(course: Course):
                         /* ... 可以在此處加入更多可瀏覽類型 */
                     )
                 "
-                :href="'/file_preview?url=' + props.node.href"
+                :href="!props.node.href.startsWith('https://istudy.ntut.edu.tw')
+                    ? props.node.href 
+                    : '/file_preview?url=' + props.node.href"
                 target="_blank" 
                 rel="noopener noreferrer"
                 @click.stop 
                 class="text-sm cursor-pointer text-primary hover:text-blue-700 underline"
             >
-                在新分頁開啟
+                <q-icon name="open_in_new" size="md" /> 
+                <q-tooltip>在新分頁開啟</q-tooltip>
             </a>
             
-            <a v-if="
-                    props.node.href && 
-                    props.node.href.startsWith('https://istudy.ntut.edu.tw')
-                "
-                :href="'/file_download?url=' + props.node.href"
-                target="_blank" 
-                rel="noopener noreferrer"
-                @click.stop 
-                class="text-sm cursor-pointer text-primary hover:text-blue-700 underline"
-            >
-               下載
-            </a>
-            
+            <template v-if="props.node.href && props.node.href.startsWith('https://istudy.ntut.edu.tw') && props.node.href !== 'about:blank'">
+                <a 
+                    :href="'/file_download?url=' + props.node.href"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    @click.stop 
+                    class="text-accent hover:text-green-700 cursor-pointer p-1 rounded-full"
+                >
+                    <q-icon name="download" size="sm" /> 
+                    <q-tooltip>下載檔案</q-tooltip>
+                </a>
+            </template>
+            <template v-else>
+                <span class="w-8 h-8 flex-shrink-0"></span>
+            </template>
         </div>
         '''
         tree.add_slot('default-header', header_template)
