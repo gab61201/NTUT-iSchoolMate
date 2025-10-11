@@ -81,7 +81,6 @@ def render_announcement(course: Course):
 
 async def render_ischool_files(course: Course):
     user = getattr(app, "user")
-    print(f"user.course_list: {user.course_list}")
     with ui.skeleton().classes("w-full h-[90%] rounded-xl flex justify-center items-center") as loading:
         ui.spinner(size='lg')
     if not await course.fetch_files():
@@ -93,10 +92,11 @@ async def render_ischool_files(course: Course):
         ui.label("沒有上傳檔案").classes("text-2xl w-full")
         return
 
-    def open_link(e):
+    def open_in_new(e):
         """在新分頁中開啟連結"""
-        print(e)
         node_data = e.args
+        print(node_data)
+
         url = node_data.get('href')
         if url and url.startswith('http'):
             ui.navigate.to(f"/file_preview?url={url}", new_tab=True)
@@ -105,9 +105,11 @@ async def render_ischool_files(course: Course):
             ui.notify(f"無法開啟無效的連結：{url}", type='warning')
 
     async def download(e):
+        node_data = e.args
+        print(node_data)
+
         original_url = e.args.get('href', '')
-        node = e.args.get('node', {})
-        text = node.get('text', 'Unknown File')
+        text = e.args.get('text', 'Unknown File')
         
         if original_url:
             download_url = f"/file_download?url={original_url}"
@@ -126,11 +128,10 @@ async def render_ischool_files(course: Course):
     
     with ui.scroll_area().classes("w-full h-full"):
         tree = ui.tree(course.file_tree, label_key='text', children_key="item", node_key='identifier', on_select=lambda e:on_select(e))\
-        .classes("text-lg w-full").expand().on('open', open_link).on('download', download)
+        .classes("text-lg w-full").expand()
 
         body_template = r'''
         <div v-if="props.node.leaf" :props="props" class="flex flex-nowrap items-start justify-between px-8 py-1 gap-2 w-full text-grey">
-
             <span class="text-sm break-words">
                 {{
                 props.node.href
@@ -142,35 +143,6 @@ async def render_ischool_files(course: Course):
                     : ''
                 }}
             </span>
-
-            <q-btn-group flat class="flex-shrink-0">
-                <q-btn
-                    v-if="
-                        props.node.href && 
-                        (
-                            !props.node.href.startsWith('https://istudy.ntut.edu.tw') || /* 非 istudy 連結 (純外部連結) */
-                            props.node.href.toLowerCase().endsWith('.pdf') ||               /* istudy 連結且可瀏覽 */
-                            props.node.href.toLowerCase().endsWith('.txt') ||
-                            props.node.href.toLowerCase().endsWith('.png') ||
-                            props.node.href.toLowerCase().endsWith('.jpg') ||
-                            props.node.href.toLowerCase().endsWith('.html')
-                            /* ... 可以在此處加入更多可瀏覽類型 */
-                        )
-                    "
-                    icon="open_in_new" color="primary" size="md" flat dense
-                    @click.stop="$parent.$emit('open', props.node)">
-                    <q-tooltip>在新分頁開啟</q-tooltip>
-                </q-btn>
-                <q-btn
-                    v-if="
-                        props.node.href && 
-                        props.node.href.startsWith('https://istudy.ntut.edu.tw')
-                    "
-                    icon="download" color="accent" size="md" flat dense
-                    @click.stop="$parent.$emit('download', props.node)">
-                    <q-tooltip>下載檔案</q-tooltip>
-                </q-btn>
-            </q-btn-group>
         </div>
         '''
         tree.add_slot('default-body', body_template)
@@ -181,6 +153,40 @@ async def render_ischool_files(course: Course):
             <span class="flex-grow text-lg">
                 {{ props.node.text }}
             </span>
+            <a v-if="
+                    props.node.href && 
+                    (
+                        !props.node.href.startsWith('https://istudy.ntut.edu.tw') || /* 非 istudy 連結 (純外部連結) */
+                        props.node.href.toLowerCase().endsWith('.pdf') ||               /* istudy 連結且可瀏覽 */
+                        props.node.href.toLowerCase().endsWith('.txt') ||
+                        props.node.href.toLowerCase().endsWith('.png') ||
+                        props.node.href.toLowerCase().endsWith('.jpg') ||
+                        props.node.href.toLowerCase().endsWith('.html')
+                        /* ... 可以在此處加入更多可瀏覽類型 */
+                    )
+                "
+                :href="'/file_preview?url=' + props.node.href"
+                target="_blank" 
+                rel="noopener noreferrer"
+                @click.stop 
+                class="text-sm cursor-pointer text-primary hover:text-blue-700 underline"
+            >
+                在新分頁開啟
+            </a>
+            
+            <a v-if="
+                    props.node.href && 
+                    props.node.href.startsWith('https://istudy.ntut.edu.tw')
+                "
+                :href="'/file_download?url=' + props.node.href"
+                target="_blank" 
+                rel="noopener noreferrer"
+                @click.stop 
+                class="text-sm cursor-pointer text-primary hover:text-blue-700 underline"
+            >
+               下載
+            </a>
+            
         </div>
         '''
         tree.add_slot('default-header', header_template)
@@ -228,8 +234,8 @@ async def file_download(url: str):
     if not filename:
         filename = "downloaded_file"
     try:
-        from urllib.parse import unquote
-        filename = unquote(filename)
+        from urllib.parse import quote
+        filename = quote(filename)
     except Exception:
         pass
 
