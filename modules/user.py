@@ -70,7 +70,6 @@ class UserManager:
             #     f.write(timetable_html)
         all_classes:list[str] = re.findall(r"<tr>\s*<td>\d{6}.+?</tr>", timetable_html, re.DOTALL)
 
-        print(all_classes)
         for class_html in all_classes:
             course = Course(self.scraper)
             course.seme = seme
@@ -110,7 +109,6 @@ class UserManager:
 
             self.course_list[seme][course.id] = course
             
-        pprint(f'self.course_list{self.course_list}')
         return True
 
 
@@ -126,15 +124,16 @@ class UserManager:
             with open('courselist.html', 'w', encoding='utf-8') as f:
                 f.write(html_text)
         course_list = re.findall(r'<option value="\d{8}">\d{4}_.+?_\d{6}</option>', html_text)
-        print(f'UserManager.fetch_course_list ischool_course_list:{course_list}')
+        if not course_list:
+            print(f'UserManager.fetch_course_list ischool_course_list failed!')
+            return False
 
         for course_data in course_list:
             data = re.search(r'<option value="(\d{8})">(\d{4})_(.+?)_(\d{6})</option>', course_data)
             if not data:
                 print("UserManager.fetch_course_list data failed!")
                 return False
-            else:
-                print(f'UserManager.fetch_course_list: {data}')
+            
             course: Course = self.course_list[data.group(2)][data.group(4)]
             course.file_url = ISCHOOL_FILE_BASE_URL + data.group(1)
         
