@@ -109,5 +109,39 @@ class Course:
         return True
 
 
+    async def fetch_video(self, identifier: str) -> bool:
+        response = await self.scraper.session.get('https://istudy.ntut.edu.tw/learn/path/m_pathtree.php')
+        encoded_course_id_html = re.search(r'<input type="hidden" name="course_id"       value="(.+?)">', response.text)
+        read_key_html = re.search(r'<input type="hidden" name="read_key"       value="(.+?)">', response.text)
+        if not encoded_course_id_html or not read_key_html:
+            return False
+        encoded_course_id = encoded_course_id_html.group(1)
+        read_key = read_key_html.group(1)
+
+        all_videos_html = await self.scraper.session.get('https://istudy.ntut.edu.tw/learn/path/SCORM_loadCA.php')
+        all_video_href = re.findall(r'<resource identifier.+?"/>', all_videos_html.text)
+        href = ''
+        for v in all_video_href:
+            s = re.search(r'<resource identifier="(.+?)" type="webcontent" href="(.+?)"/>', v)
+            if not s:
+                return False
+            if identifier == 'I_' + s.group(1):
+                href = ' @' + s.group(2)
+                break
+
+        post_data = {
+            "href": href,
+            "course_id": encoded_course_id,
+            "read_key": read_key,
+        }
+        fetch_url = await self.scraper.session.post('https://istudy.ntut.edu.tw/learn/path/SCORM_fetchResource.php', data=post_data)
+        url = re.search(r"'(.+?)'", fetch_url.text)
+        if not url:
+            return False
+        video = await self.scraper.session.get(url.group(1))
+        return True
+
+
+
 if __name__ == "__main__":
     ...
