@@ -99,13 +99,11 @@ async def render_ischool_files(course: Course):
         node_data = e.args
         url = node_data.get('href')
         if url and url.startswith('http'):
-            # 使用 ui.open 可以在新分頁開啟網址
             ui.navigate.to(f"/file_preview?url={url}", new_tab=True)
             ui.notify(f"正在開啟：{node_data.get('text')}", type='positive')
         else:
             ui.notify(f"無法開啟無效的連結：{url}", type='warning')
 
-    # 處理「複製連結」按鈕點擊事件
     async def download(e):
         original_url = e.args.get('href', '')
         node = e.args.get('node', {})
@@ -125,8 +123,6 @@ async def render_ischool_files(course: Course):
         """
         if course.file_dict[e.value].get("leaf"):
             render_right_panel.refresh('file_preview', course, course.file_dict[e.value]["text"], e.value)
-        else:
-            ui.notify(e.value)
     
     with ui.scroll_area().classes("w-full h-full"):
         tree = ui.tree(course.file_tree, label_key='text', children_key="item", node_key='identifier', on_select=lambda e:on_select(e))\
