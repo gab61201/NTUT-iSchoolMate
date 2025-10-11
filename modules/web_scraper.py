@@ -198,7 +198,6 @@ class WebScraper:
     async def fetch_seme_timetable_html(self, seme: str) -> str|None:
         student_id = app.storage.general["last_user_id"]
         timetable_url = f"https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code={student_id}&year={seme[:3]}&sem={seme[-1]}"
-        print(timetable_url)
         try:
             response = await self.session.get(timetable_url, timeout=10)
             response.raise_for_status()
