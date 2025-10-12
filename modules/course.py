@@ -138,6 +138,7 @@ class Course:
         url = re.search(r"'(.+?)'", fetch_url.text)
         if not url:
             return False
+        print(url.group(1))
         video = await self.scraper.session.get(url.group(1))
         return True
 

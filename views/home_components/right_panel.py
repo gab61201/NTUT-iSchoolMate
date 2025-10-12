@@ -1,11 +1,13 @@
 from nicegui import app, ui
-from fastapi.responses import StreamingResponse, HTMLResponse
-from urllib.parse import urlparse, parse_qs
+from fastapi.responses import StreamingResponse
+from fastapi import Request, Response
+from urllib.parse import urlparse, quote
 from typing import Literal, Any
 from modules.course import Course
-from modules.web_scraper import WebScraper
 from modules.user import UserManager
-
+import asyncio
+from starlette.background import BackgroundTask
+import httpx
 
 def render_default():
     ...
@@ -71,8 +73,40 @@ def render_description(course:Course):
     ...
 
 
-def render_recordings(course:Course):
-    ...
+async def render_recordings(course:Course):
+    if not await course.fetch_files():
+        ui.label("無法獲取檔案").classes("text-lg w-full")
+        return
+
+    async def on_expand(event, identifier):
+        if event.args:
+            await course.fetch_video(identifier)
+            videos.refresh(True)
+
+    @ui.refreshable
+    def videos(content):
+        if content == None:
+            with ui.skeleton().classes("w-full rounded-xl flex justify-center items-center"):
+                ui.spinner(size='lg')
+            return
+
+        video_session = getattr(app, "video_session", None)
+        if video_session:
+            video_session.aclose()
+
+        # TEST = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+        with ui.row().classes("w-full p-0 gap-0"):
+            ui.link("channel_1", "/video?channel=1", new_tab=True)
+            ui.link("channel_2", "/video?channel=2", new_tab=True)
+            # ui.video(f"/video?channel=1").classes("w-[50%] mt-4")
+            # ui.video(f"/video?channel=2").classes("w-[50%] mt-4")
+            # ui.video(f"/video?url={TEST}").classes("w-[50%] mt-4")
+
+    with ui.scroll_area().classes("w-full h-[90%]"):
+        for video in course.video_dict.values():
+            with ui.expansion(f"{video["text"]}", group='group').classes("w-full") \
+                .on('update:modelValue', lambda e, identifier=video["identifier"]: on_expand(e, identifier)):
+                videos(None)
 
 
 def render_announcement(course: Course):
@@ -84,12 +118,12 @@ async def render_ischool_files(course: Course):
     with ui.skeleton().classes("w-full h-[90%] rounded-xl flex justify-center items-center") as loading:
         ui.spinner(size='lg')
     if not await course.fetch_files():
-        ui.label("無法獲取檔案").classes("text-2xl w-full")
+        ui.label("無法獲取檔案").classes("text-lg w-full")
         return
     loading.delete()
 
     if not course.file_tree:
-        ui.label("沒有上傳檔案").classes("text-2xl w-full")
+        ui.label("沒有上傳檔案").classes("text-lg w-full")
         return
 
     async def on_select(e):
@@ -173,7 +207,6 @@ async def render_ischool_files(course: Course):
 
 
 async def render_preview(course: Course, page_name:str, identifier: str):
-    proxy_url = course.file_dict[identifier]["href"]
 
     with ui.row().classes("w-full h-[10%] items-center"):
         ui.label(f"{course.seme}_{course.name}_{course.id}").classes("text-2xl hover:underline cursor-pointer")\
@@ -184,6 +217,7 @@ async def render_preview(course: Course, page_name:str, identifier: str):
         ui.icon("chevron_right").classes("text-2xl text-black bg-white").props("rounded flat")
         ui.label(page_name).classes("text-2xl")
 
+    proxy_url: str = course.file_dict[identifier]["href"]
     ui.element('iframe').props(f'src="/file_preview?url={proxy_url}"') \
         .classes('w-full h-full border-2 rounded-lg')
 
@@ -195,12 +229,51 @@ async def file_preview(url: str):
     async def stream_file():
         scraper_session = user.scraper.session
         async with scraper_session.stream("GET", url) as resp:
+            content_type = resp.headers.get("Content-Type", "").lower()
             async for chunk in resp.aiter_bytes():
                 yield chunk
 
     return StreamingResponse(
         stream_file(),
         headers={"Content-Disposition": "inline"}  # 關鍵：讓瀏覽器預覽，而非下載
+    )
+
+
+@app.get('/video')
+async def get_video(channel: str, request: Request):
+    user = getattr(app, "user")
+    client: httpx.AsyncClient = user.scraper.session
+    range_header = request.headers.get("range")
+    headers_to_send = {}
+    if range_header:
+        headers_to_send["Range"] = range_header
+
+    url = f'https://istream.ntut.edu.tw/videoplayer/lectureStream.php?channel={channel}'
+    req = client.build_request("GET", url, headers=headers_to_send)
+    
+    try:
+        r = await client.send(req, stream=True)
+        setattr(app, "video_session", r)
+    except httpx.HTTPStatusError as e:
+        return Response(status_code=e.response.status_code, content=e.response.text)
+
+    
+    media_type = r.headers.get("content-type", "video/mp4")
+    
+    response_headers = {
+        "Content-Length": r.headers.get("content-length", ""),
+        "Accept-Ranges": r.headers.get("accept-ranges", "bytes"), # 確保返回 Accept-Ranges
+        "Content-Range": r.headers.get("content-range", ""), # 傳回 Content-Range
+    }
+    
+    final_headers = {k: v for k, v in response_headers.items() if v}
+
+    return StreamingResponse(
+        r.aiter_raw(), 
+        status_code=r.status_code, # 必須使用遠端伺服器返回的狀態碼 (可能是 200 或 206)
+        media_type=media_type,
+        headers=final_headers,
+        background=BackgroundTask(r.aclose)
     )
 
 
@@ -261,7 +334,7 @@ async def render_right_panel(render_type: Literal["default",
 
     elif render_type == "recordings":
         render_title(arg[0], "課程錄影")
-        render_recordings(arg[0])
+        await render_recordings(arg[0])
 
     elif render_type == "announcement":
         render_title(arg[0], "i學園公告")
