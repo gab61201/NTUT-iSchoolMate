@@ -41,7 +41,6 @@ async def render_course(course: Course):
         ui.button("i學園檔案", color="white").classes("w-full h-full text-lg rounded-xl")\
             .on_click(lambda: render_right_panel.refresh("ischool_files", course))
 
-    
 
     with ui.card().tight().classes("w-full h-[50%] rounded-lg"):
         user = getattr(app, "user")
@@ -84,21 +83,13 @@ async def render_recordings(course:Course):
                 ui.spinner(size='lg')
             return
 
-        # video_session = getattr(app, "video_session", None)
-        # if video_session:
-        #     video_session.aclose()
-
-        # TEST = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
         with ui.grid(rows=1, columns=2).classes("w-full gap-8 mb-4"):
-            # ui.button("雙", icon='open_in_new', on_click=lambda: ui.navigate.to("/video?channel=1", new_tab=True))\
-            #     .classes("w-full h-full text-black bg-white")
             ui.button("CH1", icon='open_in_new', on_click=lambda: ui.navigate.to("/video?channel=1", new_tab=True))\
                 .classes("w-full h-full text-black bg-white")
             ui.button("CH2", icon='open_in_new', on_click=lambda: ui.navigate.to("/video?channel=2", new_tab=True))\
                 .classes("w-full h-full text-black bg-white")
             # ui.video("/video?channel=1").classes("w-full h-full")
             # ui.video("/video?channel=2").classes("w-full h-full")
-            # ui.video(f"/video?url={TEST}").classes("w-[50%] mt-4")
 
     with ui.scroll_area().classes("w-full h-[90%]"):
         for video in course.video_dict.values():
@@ -129,8 +120,13 @@ async def render_ischool_files(course: Course):
         若非葉節點，則開啟節點
         若為葉節點，則開啟預覽
         """
-        if course.file_dict.get(e.value) and course.file_dict[e.value].get("leaf")\
-            and course.file_dict[e.value].get("href") != "about:blank":
+        if not course.file_dict.get(e.value) or not course.file_dict[e.value].get("leaf"):
+            return
+        href: str = course.file_dict[e.value].get("href")
+        href = href.lower()
+        supported_preview_type = ['.pdf', '.txt', '.png', '.jpg', 'html']
+        if (href.startswith("https://istudy.ntut.edu.tw") and any(href.endswith(suffix) for suffix in supported_preview_type))\
+            or (href != "about:blank" and not href.startswith("https://istudy.ntut.edu.tw")):
             render_right_panel.refresh('file_preview', course, course.file_dict[e.value]["text"], e.value)
     
     with ui.scroll_area().classes("w-full h-full"):
