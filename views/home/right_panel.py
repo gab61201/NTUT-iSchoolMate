@@ -103,16 +103,18 @@ def render_announcement(course: Course):
 
 
 async def render_ischool_files(course: Course):
-    user = getattr(app, "user")
     with ui.skeleton().classes("w-full h-[90%] rounded-xl flex justify-center items-center") as loading:
         ui.spinner(size='lg')
     if not await course.fetch_files():
-        ui.label("無法獲取檔案").classes("text-lg w-full")
+        with ui.row().classes('w-full h-[90%] justify-center items-center'):
+            ui.label("無法獲取檔案").classes("text-lg")
         return
-    loading.delete()
+    else:
+        loading.delete()
 
     if not course.file_tree:
-        ui.label("沒有上傳檔案").classes("text-lg w-full")
+        with ui.row().classes('w-full h-[90%] justify-center items-center'):
+            ui.label("沒有上傳檔案").classes("text-lg")
         return
 
     async def on_select(e):
