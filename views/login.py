@@ -1,7 +1,7 @@
 from nicegui import app, ui
 
 @ui.page('/login', title='登入')
-async def login_page():
+async def login_route():
 
     async def handle_login():
         """處理登入邏輯"""

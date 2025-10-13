@@ -1,9 +1,13 @@
-from .home import home_page
-from .login import login_page
-from .exit import exit_page
+from .home.home import home_route
+from .login import login_route
+from .exit import exit_route
+from .proxy import file_download, file_preview, video
 
 __all__ = [
-    "home",
-    "login",
-    "exit"
-    ]
+    "home_route",
+    "login_route",
+    "exit_route",
+    "file_download",
+    "file_preview",
+    "video",
+]

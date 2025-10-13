@@ -69,7 +69,7 @@ async def shutdown():
     
     tray_icon = getattr(app, "tray_icon")
     if tray_icon:
-        tray_icon.icon.notify("已成功退出 北科 i 學園 Pro", "退出")
+        tray_icon.icon.notify("已成功退出", "退出")
         tray_icon.icon.stop()
 
 app.on_startup(startup)

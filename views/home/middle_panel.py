@@ -76,7 +76,8 @@ def search_empty_classroom_ui():
 
 
 def schedule_ui():
-    ui.label("期待一下")
+    url = 'index.html'
+    ui.element('iframe').props(f'src="{url}"').classes('w-full h-full')
 
 
 def student_info_ui():

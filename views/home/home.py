@@ -1,11 +1,11 @@
 import asyncio
 from nicegui import app, ui
-from .home_components.middle_panel import *
-from .home_components.right_panel import *
+from .middle_panel import *
+from .right_panel import *
 
 
 @ui.page('/home', title='NTUT iSchoolMate')
-async def home_page():
+async def home_route():
     if not app.storage.general.get("login_status") :
         ui.navigate.to('/login')
         return
@@ -57,7 +57,7 @@ async def home_page():
                 course_search_ui()
             with ui.tab_panel('search_empty_classroom'):
                 search_empty_classroom_ui()
-            with ui.tab_panel('schedule_tab'):
+            with ui.tab_panel('schedule_tab').classes('p-0'):
                 schedule_ui()
             with ui.tab_panel('student_info_tab'):
                 student_info_ui()
