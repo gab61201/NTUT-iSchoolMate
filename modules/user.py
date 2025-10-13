@@ -120,9 +120,9 @@ class UserManager:
         if not html_text:
             print("UserManager.fetch_course_list html_text failed!")
             return False
-        else:
-            with open('courselist.html', 'w', encoding='utf-8') as f:
-                f.write(html_text)
+        # else:
+            # with open('courselist.html', 'w', encoding='utf-8') as f:
+            #     f.write(html_text)
         course_list = re.findall(r'<option value="\d{8}">\d{4}_.+?_\d{6}</option>', html_text)
         if not course_list:
             print(f'UserManager.fetch_course_list ischool_course_list failed!')
@@ -134,8 +134,10 @@ class UserManager:
                 print("UserManager.fetch_course_list data failed!")
                 return False
             
-            course: Course = self.course_list[data.group(2)][data.group(4)]
-            course.file_url = ISCHOOL_FILE_BASE_URL + data.group(1)
+
+            course: Course = self.course_list[data.group(2)].get(data.group(4), None)
+            if course:
+                course.file_url = ISCHOOL_FILE_BASE_URL + data.group(1)
         
         return True
 
