@@ -13,8 +13,8 @@ async def render_course(course: Course):
     await course.fetch_syllabus()
     await course.fetch_description()
     loading.delete()
-
-    ui.label(f"{course.seme}_{course.name}_{course.id}").classes("text-2xl w-full h-[10%] items-center")
+    with ui.row().classes("w-full h-[10%] items-center"):
+        ui.label(f"{course.seme}_{course.name}_{course.id}").classes("text-2xl")
 
     with ui.grid(rows=3, columns=4).classes("w-full h-[40%]"):
         with ui.card().classes("w-full h-full justify-center rounded-xl"):
@@ -37,7 +37,7 @@ async def render_course(course: Course):
         ui.button("課程錄影", color="white").classes("w-full h-full text-lg rounded-xl")\
             .on_click(lambda: render_right_panel.refresh("recordings", course))
         ui.button("i學園公告", color="white").classes("w-full h-full text-lg rounded-xl")\
-            .on_click(lambda: render_right_panel.refresh("announcement", course))
+            .on_click(lambda: render_right_panel.refresh("bulletin", course))
         ui.button("i學園檔案", color="white").classes("w-full h-full text-lg rounded-xl")\
             .on_click(lambda: render_right_panel.refresh("ischool_files", course))
 
@@ -93,19 +93,74 @@ async def render_recordings(course:Course):
 
     with ui.scroll_area().classes("w-full h-[90%]"):
         for video in course.video_dict.values():
-            with ui.expansion(f"{video["text"]}", group='group').classes("w-full") \
+            with ui.expansion(f"{video["text"]}", group='group').classes("w-full border border-gray-300 rounded-lg").props('header-class="bg-gray-200 rounded-lg"') \
                 .on('update:modelValue', lambda e, identifier=video["identifier"]: on_expand(e, identifier)):
                 videos(None)
 
 
-def render_announcement(course: Course):
-    ...
+async def render_bulletin(course: Course):
+    with ui.skeleton().classes("w-full h-[90%] rounded-xl flex justify-center items-center") as loading:
+        ui.spinner(size='lg')
+
+    if not await course.fetch_files():
+        loading.delete()
+        with ui.row().classes('w-full h-[90%] justify-center items-center'):
+            ui.label("無法獲取檔案").classes("text-lg")
+        return
+    
+    loading.delete()
+    bulletin = await course.get_bulletin()
+    if not bulletin:
+        with ui.row().classes('w-full h-[90%] justify-center items-center'):
+            ui.label("無法獲取公告").classes("text-lg")
+            return
+        
+
+    async def render_replies(boardid, nid):
+        with ui.skeleton().classes("w-full h-[90%] rounded-xl flex justify-center items-center") as loading:
+            ui.spinner(size='lg')
+        reply = await course.get_bulletin_reply(nid)
+        loading.delete()
+        if not reply:
+            with ui.row().classes('w-full justify-center items-center'):
+                ui.label("無法獲取回覆").classes("text-lg")
+            return
+
+        if not reply.get(f"{boardid}|{nid}", None):
+            return
+        
+        for data in reply[f"{boardid}|{nid}"]["data"].values():
+            ui.separator()
+            with ui.row().classes('w-full'):
+                ui.space()
+                ui.separator().props('vertical')
+                with ui.column().classes('w-[90%]'):
+                    ui.html(data["postcontent"])
+                    title = f'{data["realname"]} ({data.get("poster", "")})    {data["postdate"]}'
+                    ui.label(title).classes('w-full text-gray-600 text-right')
+
+    with ui.scroll_area().classes('w-full h-[90%]'):
+        for data in bulletin.values():
+            title = data["subject"]
+            caption = f'{data["realname"]} ({data.get("poster", "")})    {data["postdate"]}'
+            with ui.expansion(title, caption=caption).props('switch-toggle-side header-class="bg-gray-200 rounded-lg"')\
+                .classes("w-full border border-gray-300 rounded-lg") as post:
+                with post.add_slot('header'):
+                    with ui.row().classes("w-full items-end"):
+                        ui.label(title).classes('text-xl')
+                        ui.space()
+                        ui.label(caption).classes('text-gray-600')
+                ui.html(data["postcontent"]).classes("w-full p-6")
+                await render_replies(data["boardid"], data["node"])
+
+
 
 
 async def render_ischool_files(course: Course):
     with ui.skeleton().classes("w-full h-[90%] rounded-xl flex justify-center items-center") as loading:
         ui.spinner(size='lg')
     if not await course.fetch_files():
+        loading.delete()
         with ui.row().classes('w-full h-[90%] justify-center items-center'):
             ui.label("無法獲取檔案").classes("text-lg")
         return
@@ -223,7 +278,7 @@ async def render_right_panel(render_type: Literal["default",
                                                   "course",
                                                   "recordings",
                                                   "description",
-                                                  "announcement",
+                                                  "bulletin",
                                                   "ischool_files",
                                                   "file_preview"], *arg: Any):
     
@@ -248,9 +303,9 @@ async def render_right_panel(render_type: Literal["default",
         render_title(arg[0], "課程錄影")
         await render_recordings(arg[0])
 
-    elif render_type == "announcement":
+    elif render_type == "bulletin":
         render_title(arg[0], "i學園公告")
-        render_announcement(arg[0])
+        await render_bulletin(arg[0])
         
     elif render_type == "ischool_files":
         render_title(arg[0], "i學園檔案")

@@ -1,4 +1,5 @@
 import re
+import json
 from .web_scraper import WebScraper
 
 
@@ -9,6 +10,7 @@ class Course:
         self.seme = ""
         self.name = ""
         self.id = ""
+        self.bid = ""
         self.credits = ""
         self.data = {}
 
@@ -139,9 +141,49 @@ class Course:
         if not url:
             return False
         print(url.group(1))
-        video = await self.scraper.session.get(url.group(1))
-        return True
 
+        if await self.scraper.session.get(url.group(1)):
+            return True
+        else:
+            return False
+
+
+    async def get_bulletin(self) -> dict|None:
+        response = await self.scraper.get('https://istudy.ntut.edu.tw/learn/path/m_pathtree.php')
+        if not response:
+            return None
+        
+        search = re.search(r"var courseBulletin = '(\d+?)';", response.text)
+        if not search:
+            return None
+        self.bid = search.group(1)
+
+        post_data = {
+            "bid": self.bid,
+            "action": "getNews",
+            "tpc": "1",
+            "selectPage": "0",
+            "inputPerPage": "100"
+        }
+        all_bulletin_html = await self.scraper.session.post('https://istudy.ntut.edu.tw/mooc/controllers/forum_ajax.php', data=post_data)
+        # with open('bulletin.html', 'w', encoding='utf-8') as f:
+        #     f.write(all_bulletin_html.text)
+        return all_bulletin_html.json().get("data")
+        
+
+    async def get_bulletin_reply(self, nid: str) -> dict|None:
+        post_data = {
+            "action": "getReply",
+            "bid": self.bid,
+            "nid": nid,
+            "selectPage": "0",
+            "inputPerPage": "100"
+        }
+        bulletin_reply_html = await self.scraper.session.post('https://istudy.ntut.edu.tw/mooc/controllers/forum_ajax.php', data=post_data)
+        # with open('bulletin_reply.html', 'w', encoding='utf-8') as f:
+        #     f.write(bulletin_reply_html.text)
+        return json.loads(bulletin_reply_html.text)
+        
 
 
 if __name__ == "__main__":
