@@ -269,7 +269,7 @@ async def render_preview(course: Course, page_name:str, identifier: str):
         ui.label(page_name).classes("text-2xl")
 
     proxy_url: str = course.file_dict[identifier]["href"]
-    ui.element('iframe').props(f'src="/file_preview?url={proxy_url}"') \
+    ui.element('iframe').props(f'src="/file_preview?url={proxy_url}&title={page_name}"') \
         .classes('w-full h-full border-2 rounded-lg')
 
 

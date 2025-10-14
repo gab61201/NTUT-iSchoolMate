@@ -2,7 +2,7 @@ from nicegui import app
 from fastapi.responses import StreamingResponse
 from fastapi import Request, Response
 from starlette.background import BackgroundTask
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 import httpx
 
 from modules.user import UserManager
@@ -38,7 +38,7 @@ async def file_download(url: str):
 
 
 @app.get("/file_preview")
-async def file_preview(url: str):
+async def file_preview(url: str, title: str = "File Preview"):
     user: UserManager = getattr(app, "user")
     
     async def stream_file():
@@ -50,7 +50,7 @@ async def file_preview(url: str):
 
     return StreamingResponse(
         stream_file(),
-        headers={"Content-Disposition": "inline"}  # 關鍵：讓瀏覽器預覽，而非下載
+        headers={"Content-Disposition": f'inline; filename=\"{title}\"'}  # 關鍵：讓瀏覽器預覽，而非下載
     )
 
 
