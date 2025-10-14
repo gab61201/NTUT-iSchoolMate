@@ -121,15 +121,14 @@ class Course:
         read_key = read_key_html.group(1)
 
         all_videos_html = await self.scraper.session.get('https://istudy.ntut.edu.tw/learn/path/SCORM_loadCA.php')
-        all_video_href = re.findall(r'<resource identifier.+?"/>', all_videos_html.text)
+        all_video_href = re.findall(r'<resource identifier="(.+?)" type="webcontent" href="(.+?)"/>', all_videos_html.text)
         href = ''
         for v in all_video_href:
-            s = re.search(r'<resource identifier="(.+?)" type="webcontent" href="(.+?)"/>', v)
-            if not s:
-                return False
-            if identifier == 'I_' + s.group(1):
-                href = ' @' + s.group(2)
+            if identifier == 'I_' + v[0]:
+                href = ' @' + v[1]
                 break
+        if not href:
+            return False
 
         post_data = {
             "href": href,
