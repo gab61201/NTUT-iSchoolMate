@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.nicegui/
 build/
 develop-eggs/
 dist/
