@@ -22,9 +22,8 @@ class TrayIconManager:
         self.icon = None  # 先將 icon 初始化為 None
 
     def _on_open(self):
-        is_logged_in = app.storage.general.get("login_status", False)
-        
-        if is_logged_in:
+        user = getattr(app, "user", None)
+        if user:
             webbrowser.open(f"http://localhost:{self.port}/home")
         else:
             webbrowser.open(f"http://localhost:{self.port}/login")

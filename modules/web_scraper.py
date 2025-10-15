@@ -302,6 +302,8 @@ if __name__ == "__main__":
             return
         
         response = await scraper.fetch_seme_timetable_html("1141")
+        if not response:
+            return
         with open('fuck.html', 'w', encoding='utf-8') as f:
             f.write(response)
         # with open("courselist1.html", 'w', encoding='utf-8') as f:
