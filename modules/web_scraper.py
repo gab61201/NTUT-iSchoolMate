@@ -28,64 +28,29 @@ class WebScraper:
             "User-Agent": "Direk android App",
             "Content-Type": "application/x-www-form-urlencoded"
         }
-        self.session = httpx.AsyncClient(verify=False, follow_redirects=True, timeout=None)
-        self.session.headers.update(headers)
+        self.session = httpx.AsyncClient(verify=False, headers=headers, follow_redirects=True, timeout=None)
 
-    async def login(self, student_id: str, password: str) -> bool:
+    async def login(self, student_id: str, password: str) -> dict|None:
         """
         登入 nportal
-        
-        若成功則將登入狀態儲存於 app.storage 以及儲存密碼
         """
-        post_data = {
-            'muid': student_id,
-            'mpassword': password,
-            'forceMobile':'mobile'
-        }
-        login_response = None
         self.session.headers.update({"Referer": NPORTAL_LOGIN_PAGE_URL})
+        
         try:
-            logging.info(f"正在登入 {NPORTAL_LOGIN_URL}")
+            post_data = {
+                'muid': student_id,
+                'mpassword': password,
+                'forceMobile':'mobile'
+            }
             login_response = await self.session.post(NPORTAL_LOGIN_URL, data=post_data, timeout=10)
             login_response.raise_for_status()
-
-            logging.info("登入請求成功，正在解析 JSON 回應...")
-            json_response = login_response.json()
+            response_json = login_response.json()
+            return response_json
             
-            if json_response.get("success", False) :
-                # app.storage.general["login_status"] = True
-                app.storage.general["last_user_id"] = student_id
-                # getattr(app, "credentials").save(student_id, password)
-                logging.info(f"帳號 {student_id} 登入成功")
-                return True
-            else:
-                logging.warning(f"帳號 {student_id} 登入失敗")
-                print(json_response)
-                return False
-
-        except httpx.TimeoutException:
-            logging.error(f"登入請求超時 ({NPORTAL_LOGIN_URL})")
-            return False
-
-        except httpx.HTTPStatusError as e:
-            logging.error(
-                f"HTTP 狀態碼錯誤: {e.response.status_code} {e.response.reason_phrase} "
-                f"在請求 URL: {e.request.url}"
-            )
-            return False
-
-        except json.JSONDecodeError:
-            logging.error(f"JSON 解析失敗。伺服器回應的原始內容: {login_response.text if login_response else 'N/A'}")
-            return False
-
-        except httpx.RequestError as e:
-            logging.error(f"發生網路請求錯誤: {e}")
-            return False
-
         except Exception as e:
-            logging.critical(f"發生未預期的嚴重錯誤: {e}", exc_info=True)
-            return False
-        
+            print(f"web_scraper.login error:\n{e}")
+            return None
+
         finally:
             self.session.headers.pop("Referer", None)
 
@@ -142,24 +107,8 @@ class WebScraper:
             logging.info(f"SSO 流程成功完成，已取得 {apOu} 的 session。")
             return True
         
-        except httpx.TimeoutException as e:
-            logging.error(f"SSO 流程請求超時: URL {e.request.url}")
-            return False
-
-        except httpx.HTTPStatusError as e:
-            logging.error(
-                f"SSO 流程中發生 HTTP 狀態碼錯誤: {e.response.status_code} {e.response.reason_phrase} "
-                f"在請求 URL: {e.request.url}"
-            )
-            logging.debug(f"錯誤回應內容: {e.response.text[:200]}")
-            return False
-
-        except httpx.RequestError as e:
-            logging.error(f"SSO 流程中發生網路請求錯誤: {e.__class__.__name__} - {e}")
-            return False
-
         except Exception as e:
-            logging.critical(f"SSO 流程中發生未預期的嚴重錯誤: {e}", exc_info=True)
+            print(f"WebScraper.oauth({apOu} error:\n{e})")
             return False
         
         finally:
@@ -292,24 +241,25 @@ class WebScraper:
 if __name__ == "__main__":
     async def main():
         scraper = WebScraper()
-        if not await scraper.login(input(), input()):
-            print("登入 failed")
-            return
-        else:
-            print("登入成功")
-        if not await scraper.oauth("aa_0010-oauth"):
-            print("oauth error")
-            return
+        await scraper.login(input(), input())
+        # if not await scraper.login(input(), input()):
+        #     print("登入 failed")
+        #     return
+        # else:
+        #     print("登入成功")
+        # if not await scraper.oauth("aa_0010-oauth"):
+        #     print("oauth error")
+        #     return
         
-        response = await scraper.fetch_seme_timetable_html("1141")
-        if not response:
-            return
-        with open('fuck.html', 'w', encoding='utf-8') as f:
-            f.write(response)
-        # with open("courselist1.html", 'w', encoding='utf-8') as f:
+        # response = await scraper.fetch_seme_timetable_html("1141")
+        # if not response:
+        #     return
+        # with open('fuck.html', 'w', encoding='utf-8') as f:
         #     f.write(response)
-        response1 = await scraper.session.get('https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code=113820025&year=114&sem=1')
-        with open('fuck1.html', 'w', encoding='utf-8') as f:
-            f.write(response1.text)
+        # # with open("courselist1.html", 'w', encoding='utf-8') as f:
+        # #     f.write(response)
+        # response1 = await scraper.session.get('https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code=113820025&year=114&sem=1')
+        # with open('fuck1.html', 'w', encoding='utf-8') as f:
+        #     f.write(response1.text)
             
     asyncio.run(main())

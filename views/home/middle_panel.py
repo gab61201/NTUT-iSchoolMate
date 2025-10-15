@@ -8,7 +8,7 @@ async def timetable_ui():
 
     @ui.refreshable
     async def render_timetable(seme: str):
-        if seme not in user.timetable:
+        if seme not in user.timetables:
             loading = ui.skeleton().classes("w-full h-full rounded-2xl")
             success = await user.fetch_seme_timetable(seme)
             loading.delete()
@@ -17,7 +17,7 @@ async def timetable_ui():
                 return
 
         course_list = []
-        for i in user.timetable[seme]:
+        for i in user.timetables[seme]:
             course_list += i
         course_list.pop(0)
 

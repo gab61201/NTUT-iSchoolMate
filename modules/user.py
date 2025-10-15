@@ -1,16 +1,49 @@
 import re
+from typing import NewType
 from nicegui import app
 from .course import Course
 from .web_scraper import WebScraper
+from .credentials import CredentialsManager
 from .constants import *
-from pprint import pprint
+
+
 class UserManager:
-    def __init__(self, scraper: WebScraper) -> None:
-        self.scraper = scraper
-        self.seme_list = []
-        self.timetable: dict = {}
-        self.course_list: dict = {} #course_list[seme][couse_id]: Course()
+    def __init__(self, ) -> None:
+        self.scraper = WebScraper()
+        self.credentials = CredentialsManager()
+
         self.student_id = ""
+        self.seme_list: list[str] = []
+        self.timetables: dict = {}
+        self.course_list: dict = {} #course_list[seme][couse_id]: Course()
+
+
+    async def login(self, student_id, password) -> str:
+        """
+        登入成功回傳空字串
+
+        登入失敗回傳失敗訊息
+        """
+        login_response_json = await self.scraper.login(student_id, password)
+        if type(login_response_json) != dict:
+            print(f"UserManager.login login_response_json error:\n{login_response_json}")
+            return "登入失敗，未知錯誤"
+        
+        login_sucess =  login_response_json.get("success", False)
+        if not login_sucess:
+            return login_response_json.get("errorMsg", "登入失敗")
+        
+        if not await self.scraper.oauth('aa_0010-oauth'):
+            return "課程系統驗證失敗"
+        if not await self.scraper.oauth('ischool_plus_oauth'):
+            return "i 學園驗證失敗"
+
+        app.storage.general["last_user_id"] = student_id
+        self.credentials.save(student_id, password)
+        self.student_id = student_id
+
+        return ""
+
 
     async def fetch_year_seme_list(self) -> bool:
         """
@@ -23,14 +56,10 @@ class UserManager:
         html_text = await self.scraper.fetch_seme_list_html()
         if not html_text:
             return False
-        seme_info = re.findall(r'year=\d+?&sem=\d', html_text)
-
-        if not seme_info:
-            return False
+        seme_info = re.findall(r'year=(\d{3})&sem=(\d)', html_text)
         for semester in seme_info:
-            result = re.search(r"year=(\d+?)&sem=(\d)", semester)
-            if result:
-                self.seme_list.append(result.group(1) + result.group(2))
+            year, sem = semester
+            self.seme_list.append(year + sem)
         print("fetch_year_seme_list 結果 :", self.seme_list)
         return True
 
@@ -38,7 +67,7 @@ class UserManager:
         """
         取得使用者某學期的課程物件及課表
         self.course_list
-        self.timetable
+        self.timetables
 
         course.name
         course.id
@@ -46,17 +75,17 @@ class UserManager:
         course.description_url
         course.syllabus_url
         """
-        if self.timetable.get(seme, None):
+        if self.timetables.get(seme, None):
             return True
         
         html_text = await self.scraper.fetch_seme_timetable_html(seme)
         self.course_list[seme] = {}
 
         title = ["MENU", "一", "二", "三", "四", "五"]
-        self.timetable[seme] = []
-        self.timetable[seme].append(title)
+        self.timetables[seme] = []
+        self.timetables[seme].append(title)
         for i in range(1, 10):
-            self.timetable[seme].append([str(i)]+[None]*5)
+            self.timetables[seme].append([str(i)]+[None]*5)
 
         # with open('html_text.html', 'w', encoding='utf-8') as f:
         #     f.write(html_text)
@@ -105,7 +134,7 @@ class UserManager:
                 if hour_list[i] != "　":
                     hour = hour_list[i].split()
                     for h in hour:
-                        self.timetable[seme][int(h)][i] = course
+                        self.timetables[seme][int(h)][i] = course
 
             self.course_list[seme][course.id] = course
             
