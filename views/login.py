@@ -13,18 +13,25 @@ async def login_route():
         login_button.set_visibility(False)
         skeleton.set_visibility(visible=True)
 
+        ui.notify("正在登入")
         login_msg = await user.login(student_id.value, password.value)
         if login_msg:
-            ui.notify(login_msg)
             login_button.set_visibility(True)
             skeleton.set_visibility(visible=False)
+            ui.notify(login_msg)
             return
         
-        #####
-        await user.fetch_year_seme_list()
+        if not await user.fetch_year_seme_list():
+            ui.notify("取得資料失敗")
+            return
         for seme in user.seme_list:
-            await user.fetch_seme_timetable(seme)
-        await user.fetch_course_list()
+            if not await user.fetch_seme_timetable(seme):
+                ui.notify("取得資料失敗")
+                return
+        if not await user.fetch_course_list():
+            ui.notify("取得資料失敗")
+            return
+        
         ui.navigate.to('/home')
 
     def handle_auto_login(isEnabled):
