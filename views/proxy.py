@@ -40,17 +40,17 @@ async def file_download(url: str):
 @app.get("/file_preview")
 async def file_preview(url: str, title: str = "File Preview"):
     user: UserManager = getattr(app, "user")
-    
+
     async def stream_file():
         scraper_session = user.scraper.session
         async with scraper_session.stream("GET", url) as resp:
             content_type = resp.headers.get("Content-Type", "").lower()
             async for chunk in resp.aiter_bytes():
                 yield chunk
-
+    
     return StreamingResponse(
         stream_file(),
-        headers={"Content-Disposition": f'inline; filename=\"{title}\"'}  # 關鍵：讓瀏覽器預覽，而非下載
+        headers={"Content-Disposition": f"inline; filename*=UTF-8''{quote(title)}"}
     )
 
 
