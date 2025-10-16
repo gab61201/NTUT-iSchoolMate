@@ -245,7 +245,7 @@ async def render_ischool_files(course: Course):
                     @click.stop 
                     class="text-accent hover:text-green-700 cursor-pointer p-1 rounded-full"
                 >
-                    <q-icon name="download" size="sm" /> 
+                    <q-icon name="download" size="md" /> 
                     <q-tooltip>下載檔案</q-tooltip>
                 </a>
             </template>
