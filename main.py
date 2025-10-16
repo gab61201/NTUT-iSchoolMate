@@ -1,7 +1,8 @@
 import asyncio
 import webbrowser
 import logging
-from nicegui import app, ui
+import re
+from nicegui import app, ui, native
 from modules import *
 from views import *
 
@@ -13,11 +14,18 @@ async def startup():
     # init
     setattr(app, "user", UserManager())
 
-    tray_icon = TrayIconManager(8000)
+    port = 8080
+    for url in app.urls:
+        result = re.search(r"http://localhost:(\d{4})", url)
+        if result:
+            port = int(result.group(1))
+            setattr(app, "port", port)
+            break
+
+    tray_icon = TrayIconManager(port)
     setattr(app, "tray_icon", tray_icon)
     asyncio.create_task(tray_icon.run_in_background())
-
-    webbrowser.open(f"http://localhost:8000/login")
+    webbrowser.open(f"http://localhost:{port}/login")
 
 
 async def shutdown():
@@ -29,4 +37,4 @@ async def shutdown():
 
 app.on_startup(startup)
 app.on_shutdown(shutdown)
-ui.run(port=8000, show=False, reload=False, uvicorn_logging_level="warning")
+ui.run(port=native.find_open_port(8000), show=False, reload=False, uvicorn_logging_level="warning")
