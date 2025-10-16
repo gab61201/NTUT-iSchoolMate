@@ -6,7 +6,7 @@ from modules.user import UserManager
 async def login_route():
 
     user: UserManager = getattr(app, "user")
-    auto_login = app.storage.general["auto_login"]
+    auto_login = app.storage.general.setdefault("auto_login", False)
 
     async def handle_login():
         """處理登入邏輯"""
@@ -26,10 +26,9 @@ async def login_route():
             await user.fetch_seme_timetable(seme)
         await user.fetch_course_list()
         ui.navigate.to('/home')
-            
 
-    # def handle_auto_login(isEnabled):
-    #     auto_login = isEnabled.value
+    def handle_auto_login(isEnabled):
+        app.storage.general["auto_login"] = isEnabled.value
     
     with ui.column().classes('w-full h-[calc(100vh-32px)] justify-center items-center'):
         with ui.card().classes('w-96 p-8 rounded-2xl shadow-2xl'):
@@ -47,7 +46,10 @@ async def login_route():
             skeleton.set_visibility(False)
 
             ui.keyboard(on_key=lambda e: handle_login() if e.key == 'Enter' else None)
-            # ui.checkbox('啟動時自動登入', on_change=handle_auto_login, value=app.storage.general["auto_login"])
+            ui.checkbox('啟動時自動登入', on_change=handle_auto_login, value=auto_login)
 
-
+    if auto_login:
+        student_id.value = app.storage.general["last_user_id"]
+        password.value = user.credentials.load(student_id.value)
+        await handle_login()
     

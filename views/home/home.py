@@ -1,16 +1,17 @@
 import asyncio
 from nicegui import app, ui
+from modules.user import UserManager
 from .middle_panel import *
 from .right_panel import *
 
 
 @ui.page('/home', title='NTUT iSchoolMate')
 async def home_route():
-    if not app.storage.general.get("login_status") :
+    user: UserManager = getattr(app, "user")
+    if not user.student_id:
         ui.navigate.to('/login')
         return
     else:
-        user = getattr(app, "user")
         loading = ui.skeleton().classes("w-full h-full rounded-2xl")
         loading.delete()
 
@@ -32,10 +33,7 @@ async def home_route():
                 ui.tab('student_info_tab', '個人資訊').classes("text-lg")
 
             def on_logout():
-                getattr(app, "credentials").delete(app.storage.general["last_user_id"])
-                app.storage.general["last_user_id"] = ""
-                app.storage.general["login_status"] = False
-                app.storage.general["auto_login"] = False
+                user.logout()
                 ui.navigate.to('/login')
             ui.button("登出", on_click=on_logout, color="orange-5").classes('w-[80%] h-[5%] rounded-2xl text-md')
 

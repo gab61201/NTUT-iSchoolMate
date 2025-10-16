@@ -45,6 +45,13 @@ class UserManager:
         return ""
 
 
+    def logout(self):
+        self.__init__()
+        app.storage.general["last_user_id"] = ""
+        app.storage.general["auto_login"] = False
+        self.credentials.delete(self.student_id)
+
+
     async def fetch_year_seme_list(self) -> bool:
         """
         取得使用者讀了那些學期

@@ -22,10 +22,6 @@ async def startup():
 
 async def shutdown():
 
-    if not app.storage.general["auto_login"]:
-        app.storage.general["last_user_id"] = ""
-        getattr(app, "credentials").delete(app.storage.general["last_user_id"])
-    
     tray_icon = getattr(app, "tray_icon")
     if tray_icon:
         tray_icon.icon.notify("已成功退出", "退出")
