@@ -24,9 +24,9 @@ class TrayIconManager:
     def _on_open(self):
         user = getattr(app, "user", None)
         if user:
-            webbrowser.open(f"http://localhost:{self.port}/home")
+            webbrowser.open(f"http://127.0.0.1:{self.port}/home")
         else:
-            webbrowser.open(f"http://localhost:{self.port}/login")
+            webbrowser.open(f"http://127.0.0.1:{self.port}/login")
             
 
     def _on_exit(self):

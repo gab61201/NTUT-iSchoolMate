@@ -16,7 +16,7 @@ async def startup():
 
     port = 8080
     for url in app.urls:
-        result = re.search(r"http://localhost:(\d{4})", url)
+        result = re.search(r"http://127.0.0.1:(\d{4})", url)
         if result:
             port = int(result.group(1))
             setattr(app, "port", port)
@@ -25,7 +25,7 @@ async def startup():
     tray_icon = TrayIconManager(port)
     setattr(app, "tray_icon", tray_icon)
     asyncio.create_task(tray_icon.run_in_background())
-    webbrowser.open(f"http://localhost:{port}/login")
+    webbrowser.open(f"http://127.0.0.1:{port}/login")
 
 
 async def shutdown():
@@ -37,4 +37,4 @@ async def shutdown():
 
 app.on_startup(startup)
 app.on_shutdown(shutdown)
-ui.run(port=native.find_open_port(8000), show=False, reload=False, uvicorn_logging_level="warning")
+ui.run(port=native.find_open_port(8000), host="127.0.0.1", show=False, reload=False, uvicorn_logging_level="warning")
