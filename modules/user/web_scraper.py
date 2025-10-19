@@ -10,7 +10,6 @@ import httpx
 from httpx import Response
 from nicegui import app
 
-from .constants import *
 # from .timetable import html_to_timetable
 
 
@@ -34,6 +33,9 @@ class WebScraper:
         """
         登入 nportal
         """
+        NPORTAL_LOGIN_PAGE_URL = "https://nportal.ntut.edu.tw/index.do"
+        NPORTAL_LOGIN_URL = 'https://nportal.ntut.edu.tw/login.do'
+
         self.session.headers.update({"Referer": NPORTAL_LOGIN_PAGE_URL})
         
         try:
@@ -63,6 +65,10 @@ class WebScraper:
 
         i學園 : "ischool_plus_oauth"
         """
+        OAUTH_BASE_URL = "https://nportal.ntut.edu.tw/ssoIndex.do?apOu="
+        SSO_POST_URL = "https://nportal.ntut.edu.tw/oauth2Server.do"
+        NPORTAL_LOGIN_PAGE_URL = "https://nportal.ntut.edu.tw/index.do"
+        
         initial_oath_url = OAUTH_BASE_URL + apOu
         logging.info(f"正在執行 SSO 流程，目標: {apOu}")
         logging.debug(f"正在請求 SSO 初始頁面: {initial_oath_url}")
@@ -113,153 +119,57 @@ class WebScraper:
         
         finally:
             self.session.headers.pop("Referer", None)
-    
-
-    async def fetch_seme_list_html(self) -> str|None:
-        URL = "https://aps.ntut.edu.tw/course/tw/Select.jsp"
-        try:
-            logging.debug(f"正在請求 URL: {URL}")
-            response = await self.session.get(URL, timeout=10)
-            response.raise_for_status()
-            logging.info("成功獲取學年學期列表頁面。")
-            return response.text
-
-        except httpx.TimeoutException:
-            logging.error(f"請求超時: {URL}")
-            return None
-
-        except httpx.HTTPStatusError as e:
-            logging.error(
-                f"HTTP 狀態碼錯誤: {e.response.status_code} {e.response.reason_phrase} "
-                f"在請求 URL: {e.request.url}"
-            )
-            return None
-
-        except httpx.RequestError as e:
-            logging.error(f"發生網路請求錯誤: {e.__class__.__name__} - {e}")
-            return None
-
-        except Exception as e:
-            logging.critical(f"抓取學年學期列表時發生未預期的嚴重錯誤: {e}", exc_info=True)
-            return None
 
 
-    async def fetch_seme_timetable_html(self, seme: str) -> str|None:
-        student_id = app.storage.general["last_user_id"]
-        timetable_url = f"https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code={student_id}&year={seme[:3]}&sem={seme[-1]}"
-        try:
-            response = await self.session.get(timetable_url, timeout=10)
-            response.raise_for_status()
-            logging.info(f"成功獲取{seme}課程列表頁面。")
-            return response.text
-        
-        except httpx.TimeoutException:
-            logging.error(f"請求超時: {timetable_url}")
-            return None
-
-        except httpx.HTTPStatusError as e:
-            logging.error(
-                f"HTTP 狀態碼錯誤: {e.response.status_code} {e.response.reason_phrase} "
-                f"在請求 URL: {e.request.url}"
-            )
-            return None
-
-        except httpx.RequestError as e:
-            logging.error(f"發生網路請求錯誤: {e.__class__.__name__} - {e}")
-            return None
-
-        except Exception as e:
-            logging.critical(f"抓取{seme}課程列表時發生未預期的嚴重錯誤: {e}", exc_info=True)
-            return None
-
-
-    async def fetch_course_list_html(self) -> str|None:
-        try:
-            response = await self.session.get(ISCHOOL_COURSE_LIST_URL, timeout=10)
-            response.raise_for_status()
-            logging.info(f"成功獲取ischool課程列表頁面。")
-            return response.text
-        
-        except httpx.TimeoutException:
-            logging.error(f"請求超時: {ISCHOOL_COURSE_LIST_URL}")
-            return None
-
-        except httpx.HTTPStatusError as e:
-            logging.error(
-                f"HTTP 狀態碼錯誤: {e.response.status_code} {e.response.reason_phrase} "
-                f"在請求 URL: {e.request.url}"
-            )
-            return None
-
-        except httpx.RequestError as e:
-            logging.error(f"發生網路請求錯誤: {e.__class__.__name__} - {e}")
-            return None
-
-        except Exception as e:
-            logging.critical(f"抓取ischool課程列表時發生未預期的嚴重錯誤: {e}", exc_info=True)
-            return None
-        
-    
     async def get(self, url) -> Response|None:
         try:
             response = await self.session.get(url, timeout=10)
             response.raise_for_status()
-            logging.info(f"成功獲取{url}")
             return response
         
-        except httpx.TimeoutException:
-            logging.error(f"請求超時: {ISCHOOL_COURSE_LIST_URL}")
+        except httpx.TimeoutException as e:
+            print(e)
             return None
 
         except httpx.HTTPStatusError as e:
-            logging.error(
-                f"HTTP 狀態碼錯誤: {e.response.status_code} {e.response.reason_phrase} "
-                f"在請求 URL: {e.request.url}"
-            )
+            print(e)
             return None
 
         except httpx.RequestError as e:
-            logging.error(f"發生網路請求錯誤: {e.__class__.__name__} - {e}")
+            print(e)
             return None
 
         except Exception as e:
-            logging.critical(f"抓取{url}時發生未預期的嚴重錯誤: {e}", exc_info=True)
+            print(e)
             return None
 
-    # async def keep_login_status(self):
-    #     user_id = app.storage.general.get("last_user_id")
 
-    #     user_password = CredentialsManager().load(user_id)
+    async def post(self, url, data) -> Response|None:
+        try:
+            response = await self.session.post(url, data=data, timeout=10)
+            response.raise_for_status()
+            return response
+        
+        except httpx.TimeoutException as e:
+            print(e)
+            return None
 
-    #     if not user_password:
+        except httpx.HTTPStatusError as e:
+            print(e)
+            return None
 
-    #     if await self.login(user_id, user_password):
-            
+        except httpx.RequestError as e:
+            print(e)
+            return None
 
+        except Exception as e:
+            print(e)
+            return None
 
 
 if __name__ == "__main__":
     async def main():
         scraper = WebScraper()
         await scraper.login(input(), input())
-        # if not await scraper.login(input(), input()):
-        #     print("登入 failed")
-        #     return
-        # else:
-        #     print("登入成功")
-        # if not await scraper.oauth("aa_0010-oauth"):
-        #     print("oauth error")
-        #     return
-        
-        # response = await scraper.fetch_seme_timetable_html("1141")
-        # if not response:
-        #     return
-        # with open('fuck.html', 'w', encoding='utf-8') as f:
-        #     f.write(response)
-        # # with open("courselist1.html", 'w', encoding='utf-8') as f:
-        # #     f.write(response)
-        # response1 = await scraper.session.get('https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code=113820025&year=114&sem=1')
-        # with open('fuck1.html', 'w', encoding='utf-8') as f:
-        #     f.write(response1.text)
             
     asyncio.run(main())
