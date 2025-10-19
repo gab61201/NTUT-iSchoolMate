@@ -1,9 +1,8 @@
 import re
-from nicegui import app
+import asyncio
 from course import Course
 from web_scraper import WebScraper
 from semester import Semester
-from constants import *
 
 
 class UserManager:
@@ -13,8 +12,6 @@ class UserManager:
         self.student_id = ""
         self.password = ""
         self.semester_list: dict[str, Semester] = {}
-        self.timetables: dict = {}
-        self.course_list: dict = {} #course_list[seme][couse_id]: Course()
 
 
     async def login(self, student_id, password) -> str:
@@ -43,14 +40,14 @@ class UserManager:
         return ""
 
 
-    async def fetch_semester_list(self) -> bool:
+    async def _fetch_semester_list(self) -> bool:
         """
         取得使用者讀了那些學期
-        完成後 ex: self.seme_list = ["1132", "1131"]
+        完成後 ex: self.seme_list = {"1141":Semester("1141")}
         """
         if self.semester_list:
             return True
-        
+
         SEMESTER_LIST_URL = "https://aps.ntut.edu.tw/course/tw/Select.jsp"
         response = await self.scraper.get(SEMESTER_LIST_URL)
         if not response:
@@ -63,7 +60,7 @@ class UserManager:
         return True
 
 
-    async def fetch_all_course_file_url(self) -> bool:
+    async def _fetch_all_course_file_url(self) -> bool:
         """
         到i學園取得全部學期 Course 的 file_url
         """
@@ -77,7 +74,7 @@ class UserManager:
         if not course_list:
             print(f'UserManager.fetch_course_list ischool_course_list failed!')
             return False
-        
+
         ISCHOOL_FILE_BASE_URL = "https://istudy.ntut.edu.tw/xmlapi/index.php?action=my-course-path-info&onlyProgress=0&descendant=1&cid="
         for course_data in course_list:
             if not course_data:
@@ -92,6 +89,23 @@ class UserManager:
             course.file_url = ISCHOOL_FILE_BASE_URL + course_data[0]
         
         return True
+
+
+    async def fetch_course_data(self) -> bool:
+        if not await self._fetch_semester_list():
+            return False
+        
+        task_list = [asyncio.create_task(seme.fetch_data()) for seme in self.semester_list.values()]
+        results = await asyncio.gather(*task_list)
+        if not all(results):
+            return False
+        
+        if not await self._fetch_all_course_file_url():
+            return False
+        
+        return True
+
+
 
 
 if __name__ == "__main__":
