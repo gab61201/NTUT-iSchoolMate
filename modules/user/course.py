@@ -1,5 +1,6 @@
 import re
 import json
+from typing import Literal
 from web_scraper import WebScraper
 
 
@@ -25,8 +26,8 @@ class Course:
         self.description_url = ""
 
         """description"""
-        self.ch_description = ""
-        self.en_description = ""
+        self._ch_description = ""
+        self._en_description = ""
 
         """syllabus"""
         self.credit_type = ""
@@ -61,18 +62,27 @@ class Course:
         self.file_dict = {}
 
 
-    async def fetch_description(self) -> bool:
-        response = await self.scraper.get(self.description_url)
-        if not response:
-            return False
+    async def get_description(self, language: Literal['ch', 'en']) -> str|None:
+        """
+        ch_description = get_description('ch')
+        """
+        if not (self._ch_description and self._ch_description):
+            response = await self.scraper.get(self.description_url)
+            if not response:
+                return
+            description = re.findall(r'<td colspan=4>(.+)', response.text)
+            if len(description) != 2:
+                return
         
-        ch_search = re.search(r'<td colspan=4>(.+?)<tr>', response.text, re.DOTALL)
-        en_search = re.search(r'English Description\s+<td colspan=4>(.+?)</table>', response.text, re.DOTALL)
-        if not (ch_search and en_search):
-            return False
-        self.ch_description = ch_search.group(1).rstrip("\n")  #type:ignore
-        self.en_description = en_search.group(1).rstrip("\n")  #type:ignore
-        return True
+        self._ch_description = description[0]
+        self._en_description = description[1]
+
+        if language == 'ch' and self._ch_description:
+            return self._ch_description
+        elif language == 'en' and self._ch_description:
+            return self._ch_description
+        else:
+            return
 
 
     async def fetch_syllabus(self) -> bool:
@@ -162,14 +172,14 @@ class Course:
         read_key_html = re.search(r'<input type="hidden" name="read_key"       value="(.+?)">', response.text)
         if not encoded_course_id_html or not read_key_html:
             return False
-        
+
         encoded_course_id = encoded_course_id_html.group(1)
         read_key = read_key_html.group(1)
 
         all_videos_html = await self.scraper.get('https://istudy.ntut.edu.tw/learn/path/SCORM_loadCA.php')
         if not all_videos_html:
             return False
-        
+
         all_video_href = re.findall(r'<resource identifier="(.+?)".+?href="(.+?)"/>', all_videos_html.text)
         href = ''
         for v in all_video_href:
@@ -187,7 +197,7 @@ class Course:
         fetch_url = await self.scraper.post('https://istudy.ntut.edu.tw/learn/path/SCORM_fetchResource.php', data=post_data)
         if not fetch_url:
             return False
-        
+
         url = re.search(r"'(.+?)'", fetch_url.text)
         if not url:
             return False
