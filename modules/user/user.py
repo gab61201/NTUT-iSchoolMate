@@ -11,7 +11,7 @@ class UserManager:
 
         self.student_id = ""
         self.password = ""
-        self.semester_list: dict[str, Semester] = {}
+        self.semesters: list[Semester] = []
 
 
     async def login(self, student_id, password) -> str:
@@ -40,12 +40,18 @@ class UserManager:
         return ""
 
 
+    def get_semester(self, seme: str) -> Semester|None:
+        for s in self.semesters:
+            if s.semester == seme:
+                return s
+        return None
+
     async def _fetch_semester_list(self) -> bool:
         """
         取得使用者讀了那些學期
         完成後 ex: self.seme_list = {"1141":Semester("1141")}
         """
-        if self.semester_list:
+        if self.semesters:
             return True
 
         SEMESTER_LIST_URL = "https://aps.ntut.edu.tw/course/tw/Select.jsp"
@@ -56,7 +62,7 @@ class UserManager:
         for s in seme_info:
             year, sem = s
             semester = Semester(self.scraper, self.student_id, year + sem)
-            self.semester_list[year + sem] = semester
+            self.semesters.append(semester)
         return True
 
 
@@ -80,22 +86,25 @@ class UserManager:
             if not course_data:
                 print("UserManager.fetch_course_list data failed!")
                 return False
-            semester = self.semester_list.get(course_data[1])
+            semester = self.get_semester(course_data[1])
             if not semester:
                 continue
-            course = semester.courses.get(course_data[2])
+            course = semester.get_course(course_data[2])
             if not course:
                 continue
-            course.file_url = ISCHOOL_FILE_BASE_URL + course_data[0]
+            course._file_url = ISCHOOL_FILE_BASE_URL + course_data[0]
         
         return True
 
 
-    async def fetch_course_data(self) -> bool:
+    async def fetch_user_course_data(self) -> bool:
+        """
+        建立所有 Semester及 Course 物件
+        """
         if not await self._fetch_semester_list():
             return False
         
-        task_list = [asyncio.create_task(seme.fetch_data()) for seme in self.semester_list.values()]
+        task_list = [asyncio.create_task(seme.fetch_data()) for seme in self.semesters]
         results = await asyncio.gather(*task_list)
         if not all(results):
             return False

@@ -34,7 +34,7 @@ class Semester:
             "五": [None] * 10,
             "六": [None] * 10
         }
-        self.courses: dict[str, Course|None] = {}
+        self.courses: list[Course] = []
         self.credits = ""
         self.hours = ""
 
@@ -86,7 +86,7 @@ class Semester:
             course.syllabus_url = 'https://aps.ntut.edu.tw/course/tw/' + c[19]
             course.note = c[20]
 
-            self.courses[c[0]] = course
+            self.courses.append(course)
             for day, time in course.time.items():
                 if not time:
                     continue
@@ -101,3 +101,10 @@ class Semester:
 
         return True
 
+
+    def get_course(self, course_id: str) -> Course|None:
+        for course in self.courses:
+            if course.id == course_id:
+                return course
+        
+        return None
