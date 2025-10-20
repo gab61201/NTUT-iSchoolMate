@@ -1,8 +1,7 @@
 import re
 import asyncio
-from course import Course
-from web_scraper import WebScraper
-from semester import Semester
+from .web_scraper import WebScraper
+from .semester import Semester
 
 
 class UserManager:
@@ -44,6 +43,7 @@ class UserManager:
         for s in self.semesters:
             if s.semester == seme:
                 return s
+        print(f'user.get_semester({seme} failed!)')
         return None
 
     async def _fetch_semester_list(self) -> bool:
@@ -73,12 +73,12 @@ class UserManager:
         ISCHOOL_COURSE_LIST_URL = "https://istudy.ntut.edu.tw/learn/mooc_sysbar.php"
         response = await self.scraper.get(ISCHOOL_COURSE_LIST_URL)
         if not response:
-            print("UserManager.fetch_course_list html_text failed!")
+            print("UserManager._fetch_all_course_file_url html_text failed!")
             return False
         
         course_list = re.findall(r'<option value="(\d{8})">(\d{4})_.+?_(\d{6})</option>', response.text)
         if not course_list:
-            print(f'UserManager.fetch_course_list ischool_course_list failed!')
+            print(f'UserManager._fetch_all_course_file_url mooc_sysbar.php failed!')
             return False
 
         ISCHOOL_FILE_BASE_URL = "https://istudy.ntut.edu.tw/xmlapi/index.php?action=my-course-path-info&onlyProgress=0&descendant=1&cid="
@@ -101,12 +101,14 @@ class UserManager:
         """
         建立所有 Semester及 Course 物件
         """
-        if not await self._fetch_semester_list():
+        if not self.semesters and not await self._fetch_semester_list():
+            print(f'user.fetch_user_course_data() failed!')
             return False
         
         task_list = [asyncio.create_task(seme.fetch_data()) for seme in self.semesters]
         results = await asyncio.gather(*task_list)
         if not all(results):
+            print(f'user.fetch_user_course_data results:\n{results}')
             return False
         
         if not await self._fetch_all_course_file_url():

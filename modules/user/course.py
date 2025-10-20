@@ -1,8 +1,6 @@
 import re
-import json
 from typing import Literal
-from httpx import Response
-from web_scraper import WebScraper
+from .web_scraper import WebScraper
 
 
 class Course:

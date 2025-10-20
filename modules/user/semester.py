@@ -1,7 +1,6 @@
 import re
-
-from course import Course
-from web_scraper import WebScraper
+from .course import Course
+from .web_scraper import WebScraper
 
 
 course_pattern = r"""<tr>
@@ -46,10 +45,10 @@ class Semester:
 
         只需要執行一次
         """
-        course_form_url = f"https://aps.ntut.edu.tw/course/tw/Select.jsp\
-            ?format=-2&code={self.student_id}&year={self.semester[:3]}&sem={self.semester[-1]}"
+        course_form_url = f"https://aps.ntut.edu.tw/course/tw/Select.jsp?format=-2&code={self.student_id}&year={self.semester[:3]}&sem={self.semester[-1]}"
         Select_jsp = await self.scraper.get(course_form_url)
         if not Select_jsp:
+            print(f'semester.fetch_data() Select_jsp is None')
             return False
         
         all_courses = re.findall(course_pattern, Select_jsp.text, re.DOTALL|re.IGNORECASE)
@@ -93,8 +92,9 @@ class Semester:
                 for h in time.split():
                     self.timetable[day][int(h)] = course
 
-        total = re.search(r'<td><div align=center>(.+?)</div><td><div align=center>(\d+)</div>', course_form_url)
+        total = re.search(r'<td><div align=center>(.+?)</div><td><div align=center>(\d+)</div>', Select_jsp.text)
         if not total:
+            print(f'semester.fetch_data() total is None, seme:{self.semester}')
             return False
         self.credits = total.group(1)
         self.hours = total.group(2)

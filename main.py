@@ -3,8 +3,9 @@ import webbrowser
 import logging
 import re
 from nicegui import app, ui, native
-from modules import *
-from views import *
+from modules import TrayIconManager, UserManager
+# from views import *
+from views_new.login import *
 
 logging.basicConfig(
     level=logging.ERROR
@@ -37,4 +38,4 @@ async def shutdown():
 
 app.on_startup(startup)
 app.on_shutdown(shutdown)
-ui.run(port=native.find_open_port(8000), host="127.0.0.1", show=False, reload=False, uvicorn_logging_level="warning")
+ui.run(port=native.find_open_port(), host="127.0.0.1", show=False, reload=False, uvicorn_logging_level="warning")

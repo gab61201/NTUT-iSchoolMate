@@ -1,6 +1,5 @@
 import logging
 import asyncio
-import json
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning
 from typing import Literal
@@ -8,7 +7,6 @@ from typing import Literal
 from bs4 import BeautifulSoup
 import httpx
 from httpx import Response
-from nicegui import app
 
 # from .timetable import html_to_timetable
 
