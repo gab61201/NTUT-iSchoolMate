@@ -25,41 +25,33 @@ class Course:
         self.syllabus_url = ""
         self.description_url = ""
 
-        """description"""
         self._ch_description = ""
         self._en_description = ""
+        """description"""
 
+        self._syllabus = {}
         """syllabus"""
-        self.credit_type = ""
-        self.num_of_students = ""
-        self.num_of_quit = ""
-        self.teacher_email = ""
-        self.syllabus = ""
-        self.schedule = ""
-        self.evaluation = ""
-        self.textbook = ""
-        self.consult = ""
-        self.syllabus_note = ""
 
+        self._file_url = ""
+        self.file_tree = {}
+        self.videos = {}  # videos[identifier]
+        self.files = {}
         """
         file_list
 
         example:
-        video_dict =
-        {"I_SCO_10097882_1757382960215230": {
-            "identifier": "I_SCO_10097882_1757382960215230",
-            "text": "Chap02_Operational Amplifiers (71)",
-            "href": url,
-            "itemDisabled": false,
-            "readed": true,
-            "item": [],
-            "leaf": true
+        videos = {
+            "I_SCO_10097882_1757382960215230": {
+                "identifier": "I_SCO_10097882_1757382960215230",
+                "text": "Chap02_Operational Amplifiers (71)",
+                "href": url,
+                "itemDisabled": false,
+                "readed": true,
+                "item": [],
+                "leaf": true
             }
         }
         """
-        self.file_url = ""
-        self.video_dict = {}  # video_dict[identifier]
-        self.file_dict = {}
 
 
     async def get_description(self, language: Literal['ch', 'en']) -> str|None:
@@ -85,43 +77,48 @@ class Course:
             return
 
 
-    async def fetch_syllabus(self) -> bool:
-        response = await self.scraper.get(self.syllabus_url)
-        if not response:
-            return False
+    async def get_syllabus(self) -> dict|None:
+        # 需要測試
+        if not self._syllabus:
+            response = await self.scraper.get(self.syllabus_url)
+            if not response:
+                return None
 
-        info = re.findall(r'<td align="center">(.+?)</td>', response.text)
-        email_search = re.search(r'<a href="mailto:(.+?)">', response.text)
-        text_areas = re.findall(r'<textarea.+?>(.+?)</textarea>', response.text, re.DOTALL)
-        search_consult = re.search(r'<tr><th>課程諮詢管道<td>(.+?)</tr>', response.text)
-        search_syllabus_note = re.search(r'<div.+?>(.+?)</div>', response.text)
+            info = re.findall(r'<td align="center">(.+?)</td>', response.text)
+            email_search = re.search(r'<a href="mailto:(.+?)">', response.text)
+            text_areas = re.findall(r'<textarea.+?>(.+?)</textarea>', response.text, re.DOTALL)
+            search_consult = re.search(r'<tr><th>課程諮詢管道<td>(.+?)</tr>', response.text)
+            search_syllabus_note = re.search(r'<div.+?>(.*?)</div>', response.text)
 
-        if not (info and email_search and text_areas and search_consult and search_syllabus_note):
-            return False
+            if not (info and email_search and text_areas and search_consult and search_syllabus_note):
+                return None
+
+            credit_convert = {
+                "○":"部訂共同必修",
+                "△":"校訂共同必修",
+                "☆":"共同選修",
+                "●":"部訂專業必修",
+                "▲":"校訂專業必修",
+                "★":"專業選修"
+            }
         
-        credit_convert = {
-            "○":"部訂共同必修",
-            "△":"校訂共同必修",
-            "☆":"共同選修",
-            "●":"部訂專業必修",
-            "▲":"校訂專業必修",
-            "★":"專業選修"
+        self._syllabus = {
+            'credit_type': info[5] + " " + credit_convert[info[5]],
+            'num_of_students': info[8],
+            'num_of_quit': info[9],
+            'teacher_email': email_search.group(1),
+            'syllabus': text_areas[0],
+            'schedule': text_areas[1],
+            'evaluation': text_areas[2],
+            'textbook': text_areas[3],
+            'consult': search_consult.group(1).replace("<br>", "\n"),
+            'syllabus_note': search_syllabus_note.group(1).replace("<br>", "\n")
         }
-        self.credit_type = info[5] + " " + credit_convert[info[5]]
-        self.num_of_students = info[8]
-        self.num_of_quit = info[9]
-        self.teacher_email = email_search.group(1)
-        self.syllabus = text_areas[0]
-        self.schedule = text_areas[1]
-        self.evaluation = text_areas[2]
-        self.textbook = text_areas[3]
-        self.consult = search_consult.group(1).replace("<br>", "\n")
-        self.syllabus_note = search_syllabus_note.group(1).replace("<br>", "\n")
 
-        return True
+        return self._syllabus
     
 
-    async def fetch_course_file_url(self) -> bool:
+    async def _fetch_course_file_url(self) -> bool:
         ISCHOOL_COURSE_LIST_URL = "https://istudy.ntut.edu.tw/learn/mooc_sysbar.php"
         response = await self.scraper.get(ISCHOOL_COURSE_LIST_URL)
         if not response:
@@ -132,16 +129,16 @@ class Course:
             return False
         
         ISCHOOL_FILE_BASE_URL = "https://istudy.ntut.edu.tw/xmlapi/index.php?action=my-course-path-info&onlyProgress=0&descendant=1&cid="
-        self.file_url = ISCHOOL_FILE_BASE_URL + find_course[0]
+        self._file_url = ISCHOOL_FILE_BASE_URL + find_course[0]
 
         return True
 
 
     async def fetch_file_list(self) -> bool:
-        if not self.file_url and not await self.fetch_course_file_url():
+        if not self._file_url and not await self._fetch_course_file_url():
             return False
 
-        response = await self.scraper.get(self.file_url)
+        response = await self.scraper.get(self._file_url)
         if not response:
             return False
         self.file_tree = response.json()["data"]["path"]["item"]
@@ -151,10 +148,10 @@ class Course:
                 if tree[i]["item"]:
                     parse_tree(tree[i]["item"])
                 elif re.match(r'istream://', tree[i]["href"]):
-                    self.video_dict[tree[i]["identifier"]] = tree[i]
+                    self.videos[tree[i]["identifier"]] = tree[i]
                     del tree[i]
                 else:
-                    self.file_dict[tree[i]["identifier"]] = tree[i]
+                    self.files[tree[i]["identifier"]] = tree[i]
 
         parse_tree(self.file_tree)
         return True
