@@ -1,6 +1,7 @@
 import re
 import json
 from typing import Literal
+from httpx import Response
 from web_scraper import WebScraper
 
 
@@ -118,29 +119,33 @@ class Course:
         return self._syllabus
     
 
-    async def _fetch_course_file_url(self) -> bool:
-        ISCHOOL_COURSE_LIST_URL = "https://istudy.ntut.edu.tw/learn/mooc_sysbar.php"
-        response = await self.scraper.get(ISCHOOL_COURSE_LIST_URL)
-        if not response:
-            return False
-        
-        find_course = re.findall(rf'<option value="(\d+)">{self.semester}_.+?_{self.id}</option>', response.text)
-        if not find_course:
-            return False
-        
-        ISCHOOL_FILE_BASE_URL = "https://istudy.ntut.edu.tw/xmlapi/index.php?action=my-course-path-info&onlyProgress=0&descendant=1&cid="
-        self._file_url = ISCHOOL_FILE_BASE_URL + find_course[0]
+    async def enter_ischool(self) -> bool:
+        """
+        使用這三個屬性前要先 call 此函數
 
-        return True
+        self.file_tree = {}
 
+        self.videos = {}
 
-    async def fetch_file_list(self) -> bool:
-        if not self._file_url and not await self._fetch_course_file_url():
-            return False
+        self.files = {}
+        """
+        if not self._file_url:
+            ISCHOOL_COURSE_LIST_URL = "https://istudy.ntut.edu.tw/learn/mooc_sysbar.php"
+            response = await self.scraper.get(ISCHOOL_COURSE_LIST_URL)
+            if not response:
+                return False
+            
+            find_course = re.findall(rf'<option value="(\d+)">{self.semester}_.+?_{self.id}</option>', response.text)
+            if not find_course:
+                return False
+            
+            ISCHOOL_FILE_BASE_URL = "https://istudy.ntut.edu.tw/xmlapi/index.php?action=my-course-path-info&onlyProgress=0&descendant=1&cid="
+            self._file_url = ISCHOOL_FILE_BASE_URL + find_course[0]
 
         response = await self.scraper.get(self._file_url)
         if not response:
             return False
+        
         self.file_tree = response.json()["data"]["path"]["item"]
 
         def parse_tree(tree: list):
@@ -154,10 +159,11 @@ class Course:
                     self.files[tree[i]["identifier"]] = tree[i]
 
         parse_tree(self.file_tree)
+
         return True
     
 
-    async def fetch_video(self, identifier: str) -> bool:
+    async def watch_video(self, identifier: str) -> bool:
         """
         執行完此函式後瀏覽 url: "/video?channel=1"
         """
