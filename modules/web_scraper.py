@@ -20,16 +20,12 @@ logging.basicConfig(
 
 class WebScraper:
 
-    async def __aenter__(self) -> None:
+    async def __init__(self) -> None:
         headers = {
             "User-Agent": "Direk android App",
             "Content-Type": "application/x-www-form-urlencoded"
         }
         self.session = httpx.AsyncClient(verify=False, headers=headers, follow_redirects=True, timeout=None)
-
-
-    async def __aexit__(self) -> None:
-        await self.session.aclose()
 
 
     async def login(self, student_id: str, password: str) -> dict|None:
