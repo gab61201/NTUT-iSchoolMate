@@ -20,7 +20,7 @@ logging.basicConfig(
 
 class WebScraper:
 
-    async def __init__(self) -> None:
+    def __init__(self) -> None:
         headers = {
             "User-Agent": "Direk android App",
             "Content-Type": "application/x-www-form-urlencoded"
