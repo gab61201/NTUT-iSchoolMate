@@ -1,6 +1,5 @@
 from .web_scraper import WebScraper
 import asyncio
-from bs4 import BeautifulSoup
 import json
 import re
 
