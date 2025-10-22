@@ -15,7 +15,7 @@ class ClassroomManager:
             response = await self.scraper.get(f'https://aps.ntut.edu.tw/course/tw/course.jsp')
             if not response:
                 return None
-            search = re.search(r'Croom\.jsp\?format=-2&year=(\d)+&sem=(\d)', response.text)
+            search = re.search(r'Croom\.jsp\?format=-2&year=(\d+)&sem=(\d)', response.text)
             if not search:
                 return None
         
@@ -57,7 +57,11 @@ class ClassroomManager:
         htmls = await asyncio.gather(*responses)
 
         for html in htmls:
-            room_name = re.search(r'<tr><td>(.+)', html.text).group(1)
+            search_room_name = re.search(r'<tr><td>(.+)', html.text)
+            if not search_room_name:
+                return None
+            room_name = search_room_name.group(1)
+            
             pattern = r'<tr><td align=center>.+?<td>(.+?)<td>(.+?)<td>(.+?)<td>(.+?)<td>(.+?)<td>(.+?)<td>(.+?)'
             search = re.findall(pattern, html.text, re.DOTALL)
             for lesson in range(14):
