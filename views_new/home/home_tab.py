@@ -1,4 +1,4 @@
-from nicegui import app, ui
+from nicegui import ui
 from modules.user import UserManager
 from modules.semester import Semester
 from modules.course import Course
@@ -24,10 +24,10 @@ def get_timetable_size(table):
 
 
 
-async def render_home_tab(user: UserManager):
+def render_home_tab(user: UserManager):
 
     @ui.refreshable
-    async def render_timetable(seme: Semester):
+    def render_timetable(seme: Semester):
         timetable = seme.timetable
         days, lessons = get_timetable_size(timetable)
 
@@ -56,7 +56,7 @@ async def render_home_tab(user: UserManager):
 
     with ui.row().classes('w-full h-full p-0 justify-between'):
         if user.semesters:
-            await render_timetable(user.semesters[0])
+            render_timetable(user.semesters[0])
 
 
         with ui.card().classes('w-[49%] h-full'):
