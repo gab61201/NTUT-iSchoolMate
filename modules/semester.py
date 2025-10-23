@@ -24,18 +24,39 @@ class Semester:
         self.scraper = scraper
         self.semester = semester
         self.student_id = student_id
-        self.timetable: dict[str, list[Course|None]] = {
-            "日": [None] * 10,
-            "一": [None] * 10,
-            "二": [None] * 10,
-            "三": [None] * 10,
-            "四": [None] * 10,
-            "五": [None] * 10,
-            "六": [None] * 10
-        }
         self.courses: list[Course] = []
         self.credits = ""
-        self.hours = ""
+        self.total_hours = ""
+
+        hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C']
+        self.timetable: list[list] = [['menu', '日', '一', '二', '三', '四', '五', '六']] + [[hours[i]] + [None]*7 for i in range(12)]
+        """
+        ['menu', '日', '一', '二', '三', '四', '五', '六']
+
+        ['1', None, None, None, None, None, None, None]
+
+        ['2', None, None, None, None, None, None, None]
+
+        ['3', None, None, None, None, None, None, None]
+
+        ['4', None, None, None, None, None, None, None]
+
+        ['5', None, None, None, None, None, None, None]
+
+        ['6', None, None, None, None, None, None, None]
+
+        ['7', None, None, None, None, None, None, None]
+
+        ['8', None, None, None, None, None, None, None]
+
+        ['9', None, None, None, None, None, None, None]
+
+        ['A', None, None, None, None, None, None, None]
+
+        ['B', None, None, None, None, None, None, None]
+
+        ['C', None, None, None, None, None, None, None]
+        """
 
     async def fetch_data(self) -> bool:
         """
@@ -86,18 +107,19 @@ class Semester:
             course.note = c[20]
 
             self.courses.append(course)
-            for day, time in course.time.items():
+            for index, time in enumerate(course.time.values(), 1):
                 if not time:
                     continue
                 for h in time.split():
-                    self.timetable[day][int(h)] = course
+                    hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C']
+                    self.timetable[hours.index(h)+1][index] = course
 
         total = re.search(r'<td><div align=center>(.+?)</div><td><div align=center>(\d+)</div>', Select_jsp.text)
         if not total:
             print(f'semester.fetch_data() total is None, seme:{self.semester}')
             return False
         self.credits = total.group(1)
-        self.hours = total.group(2)
+        self.total_hours = total.group(2)
 
         return True
 

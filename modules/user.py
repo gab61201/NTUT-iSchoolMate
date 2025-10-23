@@ -59,6 +59,8 @@ class UserManager:
         if not response:
             return False
         seme_info = re.findall(r'year=(\d{3})&sem=(\d)', response.text)
+        if not seme_info:
+            return False
         for s in seme_info:
             year, sem = s
             semester = Semester(self.scraper, self.student_id, year + sem)

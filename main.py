@@ -3,9 +3,11 @@ import webbrowser
 import logging
 import re
 from nicegui import app, ui, native
-from modules import TrayIconManager, UserManager
+from modules.system_tray_icon import TrayIconManager
+from modules.user import UserManager
 # from views import *
-from views_new.login import *
+from views_new.login import login_route
+from views_new.home.home import home_route
 
 logging.basicConfig(
     level=logging.ERROR

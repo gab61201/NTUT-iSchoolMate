@@ -25,7 +25,8 @@ async def login_route():
             skeleton.set_visibility(visible=False)
             ui.notify("課程資訊取得失敗")
             return
-        ui.navigate.to('/home')
+        else:
+            ui.navigate.to('/home')
 
     def handle_auto_login(isEnabled):
         app.storage.general["auto_login"] = isEnabled.value
