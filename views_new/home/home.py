@@ -1,11 +1,13 @@
 from nicegui import app, ui
+from modules.user import UserManager
 from .home_tab import render_home_tab
+from .course_list_tab import render_course_list_tab
 from .search_empty_classroom import render_search_empty_classroom
 
 
 @ui.page('/home', title='NTUT iSchoolMate')
 async def home_route():
-    user = getattr(app, 'user')
+    user: UserManager = getattr(app, 'user')
     ui.add_head_html('<style>body { background-color: #f3f4f6 !important; }</style>')
 
     with ui.left_drawer().props('width=180'):
@@ -22,9 +24,11 @@ async def home_route():
     with ui.tab_panels(tabs, animated=False, value='home_tab')\
     .classes('w-full h-[calc(100vh-32px)] bg-gray-200 shadow-lg').props("vertical") as panel:
         with ui.tab_panel('home_tab').classes('p-0'):
-            render_home_tab(user)
-        with ui.tab_panel('course_list_tab'):
-            ui.label('2')
+            if user.semesters:
+                render_home_tab(user)
+        with ui.tab_panel('course_list_tab').classes('p-0 gap-0 items-between'):
+            if user.semesters:
+                render_course_list_tab(user)
         with ui.tab_panel('course_search_tab'):
             ui.label('3')
         with ui.tab_panel('search_empty_classroom').classes('p-0'):

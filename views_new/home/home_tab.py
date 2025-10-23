@@ -51,16 +51,15 @@ def render_home_tab(user: UserManager):
                     elif type(cell) == Course:
                         with ui.button(cell.name).classes('w-full h-full justify-center items-center p-0'):
                             with ui.tooltip().classes('bg-white shadow-md'):
-                                ui.label(f'課號：{cell.id}').classes('text-black')
-                                ui.label(f'教室：{cell.classrooms}').classes('text-black')
-                                ui.label(f'老師：{cell.teachers}').classes('text-black')
+                                ui.label(f'課號：{cell.id}').classes('text-black text-md')
+                                ui.label(f'教室：{cell.classrooms}').classes('text-black text-md')
+                                ui.label(f'教師：{cell.teachers}').classes('text-black text-md')
                     else: 
                         ui.card().classes('w-full h-full justify-center items-center')
 
 
     with ui.row().classes('w-full h-full p-0 justify-between'):
-        if user.semesters:
-            render_timetable(user.semesters[0])
+        render_timetable(user.semesters[0])
 
 
         with ui.card().classes('w-[49%] h-full'):
