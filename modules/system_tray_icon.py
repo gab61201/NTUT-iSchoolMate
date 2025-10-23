@@ -31,9 +31,6 @@ class TrayIconManager:
 
     def _on_exit(self):
         print("正在從系統匣退出...")
-        if self.icon:
-            self.icon.notify("正在退出...", "退出")
-
         app.shutdown()
 
 
