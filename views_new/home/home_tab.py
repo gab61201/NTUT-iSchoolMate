@@ -49,7 +49,11 @@ def render_home_tab(user: UserManager):
                         with ui.card().classes('w-full h-full justify-center items-center'):
                             ui.label(cell)
                     elif type(cell) == Course:
-                        ui.button(cell.name).classes('w-full h-full justify-center items-center p-0')
+                        with ui.button(cell.name).classes('w-full h-full justify-center items-center p-0'):
+                            with ui.tooltip().classes('bg-white shadow-md'):
+                                ui.label(f'課號：{cell.id}').classes('text-black')
+                                ui.label(f'教室：{cell.classrooms}').classes('text-black')
+                                ui.label(f'老師：{cell.teachers}').classes('text-black')
                     else: 
                         ui.card().classes('w-full h-full justify-center items-center')
 
