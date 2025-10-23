@@ -1,5 +1,7 @@
 from nicegui import app, ui
 from .home_tab import render_home_tab
+from .search_empty_classroom import render_search_empty_classroom
+
 
 @ui.page('/home', title='NTUT iSchoolMate')
 async def home_route():
@@ -12,7 +14,7 @@ async def home_route():
             ui.tab('home_tab', '首頁').classes("text-lg rounded-md")#.style("border-radius: 100000px;")
             ui.tab('course_list_tab', '課程清單').classes("text-lg rounded-md")
             ui.tab('course_search_tab', '課程查詢').classes("text-lg rounded-md")
-            ui.tab('search_empty_classroom_ui', '找空教室').classes("text-lg rounded-md")
+            ui.tab('search_empty_classroom', '找空教室').classes("text-lg rounded-md")
             ui.tab('schedule_tab', '行事曆').classes("text-lg rounded-md")
             ui.tab('student_info_tab', '個人資訊').classes("text-lg rounded-md")
 
@@ -20,13 +22,13 @@ async def home_route():
     with ui.tab_panels(tabs, animated=False, value='home_tab')\
     .classes('w-full h-[calc(100vh-32px)] bg-gray-200 shadow-lg').props("vertical") as panel:
         with ui.tab_panel('home_tab').classes('p-0'):
-            await render_home_tab(user)
+            render_home_tab(user)
         with ui.tab_panel('course_list_tab'):
             ui.label('2')
         with ui.tab_panel('course_search_tab'):
             ui.label('3')
-        with ui.tab_panel('search_empty_classroom'):
-            ui.label('4')
+        with ui.tab_panel('search_empty_classroom').classes('p-0'):
+            render_search_empty_classroom()
         with ui.tab_panel('schedule_tab'):
             ui.label('5')
         with ui.tab_panel('student_info_tab'):
